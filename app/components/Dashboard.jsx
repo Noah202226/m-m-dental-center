@@ -42,7 +42,7 @@ export default function DentalClinicLayout() {
         className={`fixed md:static inset-y-0 left-0 transform ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         } md:translate-x-0 transition-transform duration-200 ease-in-out
-        w-64 bg-black border-r border-gray-800 flex flex-col z-20`}
+  w-64 bg-black border-r border-gray-800 flex flex-col z-20`}
       >
         <div className="p-6 border-b border-gray-800 flex items-center justify-between">
           <h1 className="text-2xl font-bold text-yellow-400">
@@ -91,35 +91,32 @@ export default function DentalClinicLayout() {
       <main className="flex-1 overflow-y-auto">
         {/* Header */}
         <header className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-gray-800 bg-black sticky top-0 z-10">
-          {/* Left: Page Title + Menu Button */}
-          {/* <div className="flex items-center gap-3">
+          {/* LEFT: Mobile Menu Button + DateTime */}
+          <div className="flex items-center gap-3">
+            {/* Mobile Menu Button */}
             <button
-              className="md:hidden p-2 rounded-md bg-gray-900 text-gray-300 hover:text-yellow-400"
+              className="md:hidden text-yellow-400 p-2 rounded-lg hover:bg-gray-900"
               onClick={() => setSidebarOpen(true)}
             >
-              <Menu size={20} />
+              <Menu size={24} />
             </button>
-            <h2 className="text-lg sm:text-xl font-semibold text-yellow-400 capitalize">
-              {active}
-            </h2>
-          </div> */}
 
-          {/* Middle: Live Date & Time */}
-          <div className="hidden sm:flex flex-col text-center md:text-left">
-            <span className="text-xs sm:text-sm text-gray-300">
-              {dateTime.toLocaleDateString(undefined, {
-                weekday: "long",
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-              })}
-            </span>
-            <span className="text-base sm:text-lg font-mono text-yellow-400">
-              {dateTime.toLocaleTimeString()}
-            </span>
+            <div className="sm:flex flex-col text-center md:text-left">
+              <span className="text-xs sm:text-sm text-gray-300">
+                {dateTime.toLocaleDateString(undefined, {
+                  weekday: "long",
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                })}{" "}
+              </span>
+              <span className="text-base sm:text-lg font-mono text-yellow-400">
+                {dateTime.toLocaleTimeString()}
+              </span>
+            </div>
           </div>
 
-          {/* Right: Quick Stats + Actions + Profile */}
+          {/* RIGHT: Quick Stats + Actions + Profile */}
           <div className="flex items-center gap-4 sm:gap-6">
             {/* Stats hidden on xs screens */}
             <div className="hidden sm:flex gap-4">
@@ -203,7 +200,6 @@ export default function DentalClinicLayout() {
             </div>
 
             {/* User Profile */}
-            {/* Profile Dropdown */}
             <div className="dropdown dropdown-end">
               <div
                 tabIndex={0}
@@ -224,7 +220,6 @@ export default function DentalClinicLayout() {
                 <li>
                   <a>Profile</a>
                 </li>
-
                 <li>
                   <button
                     onClick={() => {
@@ -282,9 +277,7 @@ export default function DentalClinicLayout() {
           )}
 
           {active === "patients" && <Patients />}
-
           {active === "reports" && <Reports />}
-
           {active === "settings" && <SettingsData />}
         </section>
       </main>

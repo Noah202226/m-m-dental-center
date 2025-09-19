@@ -66,7 +66,7 @@ export default function Hero() {
       </div>
 
       {/* Right Section - Auth Form */}
-      <div className="flex-1 flex items-center justify-center bg-base-100 px-6 md:px-12">
+      <div className="flex-1 flex items-center justify-center bg-[var(--theme-text)] px-6 md:px-12">
         <AnimatePresence mode="wait">
           <motion.div
             key={isSignUp ? "signup" : "login"}
