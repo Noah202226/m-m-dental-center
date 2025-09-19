@@ -44,15 +44,15 @@ export default function Header() {
       transition={{ duration: 0.4 }}
       className={`fixed top-0 left-0 w-full z-50 transition-all duration-300  ${
         scrolled
-          ? "bg-base-100/80 backdrop-blur shadow-md py-2"
-          : "bg-base-100 py-4"
+          ? "bg-black backdrop-blur shadow-md py-2"
+          : "bg-black py-4"
       }`}
     >
       <div className="max-w-7xl mx-auto flex items-center justify-between px-6">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 cursor-pointer">
           <motion.h1
-            className="text-2xl font-bold text-base-content transition-colors duration-500"
+            className="text-2xl font-bold text-[var(--theme-text)] transition-colors duration-500"
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
           >
@@ -61,7 +61,7 @@ export default function Header() {
         </Link>
 
         {/* Desktop Nav */}
-        <nav className="hidden md:flex gap-6 text-base-content transition-colors duration-500">
+        <nav className="hidden md:flex gap-6 text-[var(--theme-text)] transition-colors duration-500">
           <Link href="#features" className="hover:text-primary ">
             Features
           </Link>
@@ -76,18 +76,18 @@ export default function Header() {
         {/* Actions */}
         <div className="flex items-center gap-4">
           {/* Theme Toggle */}
-          <button onClick={toggleTheme} className="p-2 rounded-full ">
+          {/* <button onClick={toggleTheme} className="p-2 rounded-full ">
             {theme === "light" ? (
               <MoonIcon color="black" size={20} />
             ) : (
               <SunIcon size={20} />
             )}
-          </button>
+          </button> */}
 
           {/* Desktop CTA */}
           {current ? (
             <div className="hidden md:flex items-center gap-3">
-              <span className="text-sm font-medium text-base-content">
+              <span className="text-sm font-medium text-[var(--theme-text)]">
                 {current.name || current.email}
               </span>
               <button
@@ -138,21 +138,21 @@ export default function Header() {
         >
           <Link
             href="#features"
-            className="block hover:text-primary text-base-content transition-colors duration-500"
+            className="block hover:text-primary text-[var(--theme-text)] transition-colors duration-500"
             onClick={() => setMenuOpen(false)}
           >
             Features
           </Link>
           <Link
             href="#pricing"
-            className="block hover:text-primary text-base-content transition-colors duration-500"
+            className="block hover:text-primary text-[var(--theme-text)] transition-colors duration-500"
             onClick={() => setMenuOpen(false)}
           >
             Pricing
           </Link>
           <Link
             href="#faq"
-            className="block hover:text-primary text-base-content transition-colors duration-500"
+            className="block hover:text-primary text-[var(--theme-text)] transition-colors duration-500"
             onClick={() => setMenuOpen(false)}
           >
             FAQ
@@ -161,7 +161,7 @@ export default function Header() {
           {/* Auth state on mobile */}
           {current ? (
             <div className="border-t border-base-300 pt-4 flex flex-col gap-3">
-              <span className="block mb-2 text-sm font-medium text-base-content text-right">
+              <span className="block mb-2 text-sm font-medium text-[var(--theme-text)] text-right">
                 {current.name || current.email}
               </span>
               <button
