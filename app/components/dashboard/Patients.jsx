@@ -14,13 +14,21 @@ export default function PatientsLayout() {
   const [search, setSearch] = useState("");
 
   const patients = [
-    { id: 1, name: "Noa Ligpitan", age: 28, service: "Braces", balance: 12000 },
+    {
+      id: 1,
+      name: "Noa Ligpitan",
+      age: 28,
+      service: "Braces",
+      balance: 12000,
+      address: "Makapilapil San Ildefonso, Bulacan",
+    },
     {
       id: 2,
       name: "Maria Santos",
       age: 32,
       service: "Teeth Whitening",
       balance: 0,
+      address: "Makapilapil San Ildefonso, Bulacan",
     },
     {
       id: 3,
@@ -28,10 +36,32 @@ export default function PatientsLayout() {
       age: 25,
       service: "Braces",
       balance: 8000,
+      address: "Makapilapil San Ildefonso, Bulacan",
     },
-    { id: 4, name: "Mark Reyes", age: 30, service: "Cleaning", balance: 0 },
-    { id: 5, name: "Ana Cruz", age: 27, service: "Braces", balance: 15000 },
-    { id: 6, name: "Carlos Lopez", age: 40, service: "Extraction", balance: 0 },
+    {
+      id: 4,
+      name: "Mark Reyes",
+      age: 30,
+      service: "Cleaning",
+      balance: 0,
+      address: "Makapilapil San Ildefonso, Bulacan",
+    },
+    {
+      id: 5,
+      name: "Ana Cruz",
+      age: 27,
+      service: "Braces",
+      balance: 15000,
+      address: "Makapilapil San Ildefonso, Bulacan",
+    },
+    {
+      id: 6,
+      name: "Carlos Lopez",
+      age: 40,
+      service: "Extraction",
+      balance: 0,
+      address: "Makapilapil San Ildefonso, Bulacan",
+    },
   ];
 
   // Filter patients
@@ -66,10 +96,17 @@ export default function PatientsLayout() {
                 selectedPatient?.id === p.id
                   ? "bg-yellow-500 text-black"
                   : "bg-gray-800 text-white hover:bg-gray-700"
-              }`}
+              }
+              ${p.balance > 0 ? "border-l-4 border-red-500" : "border-none"}
+              ${p.balance === 0 ? "opacity-70" : "opacity-100"}
+              ${p.balance > 0 ? "font-semibold" : "font-normal"}
+              
+              ${p.service === "Braces" ? "italic" : ""}
+              `}
             >
               <h3 className="font-semibold">{p.name}</h3>
-              <p className="text-sm opacity-75">{p.age} yrs old</p>
+              <p className="text-sm opacity-75">{p.service}</p>
+              <p className="text-sm opacity-75">{p.address}</p>
             </button>
           ))}
           {filteredPatients.length === 0 && (

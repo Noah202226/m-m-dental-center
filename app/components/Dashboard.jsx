@@ -12,6 +12,7 @@ import {
 import SettingsData from "./dashboard/Settings";
 import Reports from "./dashboard/Reports";
 import Patients from "./dashboard/Patients";
+import { useAuthStore } from "../stores/authStore";
 
 const menuItems = [
   { id: "dashboard", label: "Dashboard", icon: <Home size={20} /> },
@@ -25,6 +26,9 @@ export default function DentalClinicLayout() {
   const [active, setActive] = useState("dashboard");
   const [dateTime, setDateTime] = useState(new Date());
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Logout function (replace with your auth logic)
+  const { logout } = useAuthStore((state) => state);
 
   useEffect(() => {
     const timer = setInterval(() => setDateTime(new Date()), 1000);
@@ -199,11 +203,39 @@ export default function DentalClinicLayout() {
             </div>
 
             {/* User Profile */}
-            <div className="flex items-center gap-2 sm:gap-3">
-              <span className="hidden sm:inline text-sm">Hello, Dr. Smith</span>
-              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-yellow-400 flex items-center justify-center text-black font-bold">
-                DS
+            {/* Profile Dropdown */}
+            <div className="dropdown dropdown-end">
+              <div
+                tabIndex={0}
+                role="button"
+                className="flex items-center gap-2 sm:gap-3 cursor-pointer"
+              >
+                <span className="hidden sm:inline text-sm">
+                  Hello, Dr. Smith
+                </span>
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-yellow-400 flex items-center justify-center text-black font-bold">
+                  DS
+                </div>
               </div>
+              <ul
+                tabIndex={0}
+                className="dropdown-content menu p-2 shadow bg-black border border-yellow-500 rounded-box w-44"
+              >
+                <li>
+                  <a>Profile</a>
+                </li>
+
+                <li>
+                  <button
+                    onClick={() => {
+                      logout();
+                    }}
+                    className="text-red-500"
+                  >
+                    Logout
+                  </button>
+                </li>
+              </ul>
             </div>
           </div>
         </header>
