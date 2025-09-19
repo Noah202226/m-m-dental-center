@@ -15,8 +15,14 @@ export default function Footer() {
             Twitter
           </a>
           <a
+          href="fb.com/noa"
+            >
+            Facebook
+          </a>
+          <a
             href="#"
             className="hover:text-white transition-colors duration-200"
+            
           >
             LinkedIn
           </a>
