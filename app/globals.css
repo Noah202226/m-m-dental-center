@@ -3,14 +3,13 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
- 
   --theme-bg: #1f0202;
-  --theme-text: #fffb00;
+  --theme-text: oklch(85.2% 0.199 91.936);
+  --theme-text-muted: #689b8a;
 }
 
-
 body {
-  background: var( --theme-bg);
+  background: var(--theme-bg);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }

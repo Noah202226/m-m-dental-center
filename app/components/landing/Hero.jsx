@@ -1,9 +1,37 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
+import AuthForm from "../AuthForm";
+import { useRouter } from "next/navigation";
+import { useAuthStore } from "../../stores/authStore";
+import { useEffect, useState } from "react";
 
 export default function Hero() {
+  const { login, register, getCurrentUser, current, loading } = useAuthStore(
+    (state) => state
+  );
+  const [isSignUp, setIsSignUp] = useState(false);
+  const router = useRouter();
+
+  useEffect(() => {
+    getCurrentUser();
+  }, [getCurrentUser]);
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    const form = new FormData(e.target);
+    const user = await login(form.get("email"), form.get("password"));
+    if (user) router.push("/"); // ✅ safe navigation
+  };
+
+  const handleRegister = async (e) => {
+    e.preventDefault();
+    const form = new FormData(e.target);
+    const user = await register(form.get("email"), form.get("password"));
+    if (user) router.push("/"); // ✅ safe navigation
+  };
+
   return (
     <section
       className="min-h-screen flex flex-col items-center justify-center text-center px-6 bg-base-100
@@ -31,26 +59,29 @@ export default function Hero() {
         Simplify your clinic operations with our modern, secure, and
         user-friendly platform.
       </motion.p>
-
-      <motion.div
-        className="mt-6 flex gap-4"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4, duration: 0.6 }}
-      >
-        <Link
-          href="#pricing"
-          className="btn btn-primary transition-colors duration-500"
-        >
-          Get Started
-        </Link>
-        <Link
-          href="#features"
-          className="btn btn-outline btn-primary transition-colors duration-500"
-        >
-          Learn More
-        </Link>
-      </motion.div>
+      <div>
+        {/* {!loading && (
+          <p>{current ? `Hello, ${current.email}` : "Not logged in"}</p>
+        )} */}
+        <div className="w-full flex items-center justify-center bg-base-200 px-4 sm:px-6 lg:px-8">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={isSignUp ? "signup" : "login"}
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -30 }}
+              transition={{ duration: 0.3, ease: "easeInOut" }}
+              className="w-full max-w-md"
+            >
+              <AuthForm
+                handleSubmit={isSignUp ? handleRegister : handleLogin}
+                submitType={isSignUp ? "Sign Up" : "Log In"}
+                onToggle={() => setIsSignUp(!isSignUp)}
+              />
+            </motion.div>
+          </AnimatePresence>
+        </div>
+      </div>
     </section>
   );
 }
