@@ -13,6 +13,7 @@ import SettingsData from "./dashboard/Settings";
 import Reports from "./dashboard/Reports";
 import Patients from "./dashboard/Patients";
 import { useAuthStore } from "../stores/authStore";
+import NewPatientModal from "./dashboard/actions/NewPatientModal";
 
 const menuItems = [
   { id: "dashboard", label: "Dashboard", icon: <Home size={20} /> },
@@ -139,13 +140,8 @@ export default function DentalClinicLayout() {
             </div>
 
             {/* Action Buttons (Desktop) */}
-            <div className="hidden md:flex gap-2">
-              <button
-                onClick={() => console.log("New Patient")}
-                className="px-3 py-1.5 rounded-md bg-yellow-400 text-black text-sm font-medium hover:bg-yellow-500"
-              >
-                + Patient
-              </button>
+            <div className="hidden md:flex gap-2 z-10">
+              <NewPatientModal />
               <button
                 onClick={() => console.log("New Expense")}
                 className="px-3 py-1.5 rounded-md bg-gray-900 text-yellow-400 text-sm font-medium border border-gray-700 hover:bg-gray-800"
@@ -161,7 +157,7 @@ export default function DentalClinicLayout() {
             </div>
 
             {/* Mobile Dropdown Menu */}
-            <div className="dropdown dropdown-end md:hidden">
+            <div className="dropdown dropdown-end md:hidden z-50">
               <label
                 tabIndex={0}
                 className="btn btn-sm bg-yellow-400 text-black hover:bg-yellow-500"
@@ -170,9 +166,9 @@ export default function DentalClinicLayout() {
               </label>
               <ul
                 tabIndex={0}
-                className="dropdown-content menu p-2 shadow bg-gray-900 border border-gray-700 rounded-lg w-44"
+                className="dropdown-content menu p-2 shadow bg-gray-900 border border-gray-700 rounded-lg w-44 z-50"
               >
-                <li>
+                <li className="z-50">
                   <button
                     onClick={() => console.log("New Patient")}
                     className="text-yellow-400 hover:bg-gray-800"

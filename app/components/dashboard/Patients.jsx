@@ -74,7 +74,7 @@ export default function PatientsLayout() {
       {/* Left: Patients List Panel */}
       <aside className="w-full md:w-1/3 border-r border-gray-800 flex flex-col">
         {/* Sticky Search Bar */}
-        <div className="sticky top-0 bg-black p-4 z-10 border-b border-gray-800">
+        <div className="sticky top-0 bg-black p-4 -z-50 border-b border-gray-800">
           <div className="flex items-center gap-2">
             <FiSearch className="text-yellow-400" />
             <input
