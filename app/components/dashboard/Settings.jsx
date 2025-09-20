@@ -1,245 +1,71 @@
-"use client";
 import { useState } from "react";
+import { motion } from "framer-motion";
+import ServicesData from "../settings/services/Services";
 
-export default function SettingsData() {
-  const [services, setServices] = useState([]);
-  const [newServiceName, setNewServiceName] = useState("");
-  const [editingServiceId, setEditingServiceId] = useState(null);
-  const [editServiceName, setEditServiceName] = useState("");
+export default function SettingsTabs() {
+  const [activeTab, setActiveTab] = useState("personalization");
 
-  const [newSubServiceName, setNewSubServiceName] = useState("");
-  const [editingSubService, setEditingSubService] = useState(null);
-
-  const [openServiceId, setOpenServiceId] = useState(null);
-
-  // ---- MAIN SERVICES ----
-  const addService = () => {
-    if (!newServiceName.trim()) return;
-    setServices([
-      ...services,
-      { id: Date.now(), name: newServiceName, subServices: [] },
-    ]);
-    setNewServiceName("");
-  };
-
-  const startEditService = (id, name) => {
-    setEditingServiceId(id);
-    setEditServiceName(name);
-    setOpenServiceId(id); // force open when editing
-  };
-
-  const saveServiceEdit = (id) => {
-    setServices(
-      services.map((s) => (s.id === id ? { ...s, name: editServiceName } : s))
-    );
-    setEditingServiceId(null);
-    setEditServiceName("");
-  };
-
-  const deleteService = (id) => {
-    setServices(services.filter((s) => s.id !== id));
-    if (openServiceId === id) setOpenServiceId(null);
-  };
-
-  // ---- SUB-SERVICES ----
-  const addSubService = (serviceId) => {
-    if (!newSubServiceName.trim()) return;
-    setServices(
-      services.map((s) =>
-        s.id === serviceId
-          ? {
-              ...s,
-              subServices: [
-                ...s.subServices,
-                { id: Date.now(), name: newSubServiceName },
-              ],
-            }
-          : s
-      )
-    );
-    setNewSubServiceName("");
-    setOpenServiceId(serviceId); // keep open when adding
-  };
-
-  const startEditSubService = (serviceId, subId, name) => {
-    setEditingSubService({ serviceId, subId });
-    setNewSubServiceName(name);
-    setOpenServiceId(serviceId);
-  };
-
-  const saveSubServiceEdit = () => {
-    setServices(
-      services.map((s) =>
-        s.id === editingSubService.serviceId
-          ? {
-              ...s,
-              subServices: s.subServices.map((sub) =>
-                sub.id === editingSubService.subId
-                  ? { ...sub, name: newSubServiceName }
-                  : sub
-              ),
-            }
-          : s
-      )
-    );
-    setEditingSubService(null);
-    setNewSubServiceName("");
-  };
-
-  const deleteSubService = (serviceId, subId) => {
-    setServices(
-      services.map((s) =>
-        s.id === serviceId
-          ? {
-              ...s,
-              subServices: s.subServices.filter((sub) => sub.id !== subId),
-            }
-          : s
-      )
-    );
-  };
+  const tabs = [
+    { key: "personalization", label: "PERSONALIZATION" },
+    { key: "users", label: "USERS" },
+    { key: "dropdown", label: "DROPDOWN VALUES" },
+    { key: "inventory", label: "PRODUCT INVENTORY" },
+  ];
 
   return (
-    <div className="card shadow-xl w-full max-w-3xl mx-auto mt-8">
-      <div className="card-body">
-        <h2 className="card-title text-[var(--theme-text)]">System Settings</h2>
-        <p>Manage services and their sub-services here.</p>
+    <div className="w-full">
+      {/* Header */}
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-2xl font-bold text-yellow-400">Settings</h2>
+      </div>
 
-        {/* Add Main Service */}
-        <div className="join w-full mt-4">
-          <input
-            type="text"
-            className="input input-bordered join-item w-full"
-            placeholder="Add new service"
-            value={newServiceName}
-            onChange={(e) => setNewServiceName(e.target.value)}
-          />
-          <button onClick={addService} className="btn btn-primary join-item">
-            Add
-          </button>
-        </div>
-
-        {/* Services List */}
-        <div className="mt-6 space-y-3">
-          {services.map((service) => (
-            <div
-              key={service.id}
-              className="collapse collapse-arrow border border-base-300 rounded-lg"
-            >
-              <input
-                type="checkbox"
-                checked={openServiceId === service.id}
-                onChange={() =>
-                  setOpenServiceId(
-                    openServiceId === service.id ? null : service.id
-                  )
-                }
-              />
-              <div className="collapse-title font-medium flex justify-between items-center">
-                {editingServiceId === service.id ? (
-                  <input
-                    type="text"
-                    className="input input-sm input-bordered w-full max-w-xs"
-                    value={editServiceName}
-                    onChange={(e) => setEditServiceName(e.target.value)}
+      {/* 🚀 Custom Scrollable Tab Bar */}
+      <div className="relative border-b border-yellow-400 overflow-x-auto">
+        <div className="flex space-x-2 min-w-max px-2">
+          {tabs.map((tab) => {
+            const isActive = activeTab === tab.key;
+            return (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                className={`relative px-4 py-2 rounded-md font-semibold transition-colors 
+                  ${
+                    isActive
+                      ? "text-black bg-yellow-400"
+                      : "text-gray-400 hover:text-yellow-300 hover:bg-yellow-400/20"
+                  }`}
+              >
+                {tab.label}
+                {/* Animate underline */}
+                {isActive && (
+                  <motion.div
+                    layoutId="activeTab"
+                    className="absolute bottom-0 left-0 right-0 h-[2px] bg-black"
+                    transition={{ type: "spring", stiffness: 500, damping: 30 }}
                   />
-                ) : (
-                  <span>{service.name}</span>
                 )}
-                <div className="flex gap-2">
-                  {editingServiceId === service.id ? (
-                    <button
-                      className="btn btn-xs btn-success"
-                      onClick={() => saveServiceEdit(service.id)}
-                    >
-                      Save
-                    </button>
-                  ) : (
-                    <button
-                      className="btn btn-xs"
-                      onClick={() => startEditService(service.id, service.name)}
-                    >
-                      Edit
-                    </button>
-                  )}
-                  <button
-                    className="btn btn-xs btn-error"
-                    onClick={() => deleteService(service.id)}
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-
-              <div className="collapse-content">
-                {/* Sub-services */}
-                <ul className="list-disc list-inside space-y-2">
-                  {service.subServices.map((sub) => (
-                    <li
-                      key={sub.id}
-                      className="flex justify-between items-center"
-                    >
-                      {editingSubService &&
-                      editingSubService.subId === sub.id ? (
-                        <input
-                          type="text"
-                          className="input input-sm input-bordered w-full max-w-xs"
-                          value={newSubServiceName}
-                          onChange={(e) => setNewSubServiceName(e.target.value)}
-                        />
-                      ) : (
-                        <span>{sub.name}</span>
-                      )}
-                      <div className="flex gap-2">
-                        {editingSubService &&
-                        editingSubService.subId === sub.id ? (
-                          <button
-                            className="btn btn-xs btn-success"
-                            onClick={saveSubServiceEdit}
-                          >
-                            Save
-                          </button>
-                        ) : (
-                          <button
-                            className="btn btn-xs"
-                            onClick={() =>
-                              startEditSubService(service.id, sub.id, sub.name)
-                            }
-                          >
-                            Edit
-                          </button>
-                        )}
-                        <button
-                          className="btn btn-xs btn-error"
-                          onClick={() => deleteSubService(service.id, sub.id)}
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-
-                {/* Add Sub-service */}
-                <div className="join w-full mt-3">
-                  <input
-                    type="text"
-                    className="input input-bordered join-item w-full"
-                    placeholder="Add sub-service"
-                    value={editingSubService ? "" : newSubServiceName}
-                    onChange={(e) => setNewSubServiceName(e.target.value)}
-                  />
-                  <button
-                    className="btn btn-primary join-item"
-                    onClick={() => addSubService(service.id)}
-                  >
-                    Add
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
+              </button>
+            );
+          })}
         </div>
+      </div>
+
+      {/* Tab Content */}
+      <div className="mt-6 p-4 border border-yellow-400 rounded-lg bg-black">
+        {activeTab === "personalization" && (
+          <p className="text-yellow-400">
+            ⚙️ Personalization settings go here...
+          </p>
+        )}
+        {activeTab === "users" && (
+          <p className="text-yellow-400">👥 Manage users here...</p>
+        )}
+        {activeTab === "dropdown" && <ServicesData />}
+        {activeTab === "inventory" && (
+          <div className="p-6 bg-yellow-400 text-black text-center rounded font-semibold">
+            🚧 Features coming soon...
+          </div>
+        )}
       </div>
     </div>
   );

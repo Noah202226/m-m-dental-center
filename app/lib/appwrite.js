@@ -10,5 +10,6 @@ client
 
 export const account = new Account(client);
 export const databases = new Databases(client);
+export const DATABASE_ID = process.env.NEXT_PUBLIC_DATABASE_ID;
 
 export { ID } from "appwrite";

@@ -303,9 +303,9 @@ export default function DentalClinicLayout() {
       </main>
 
       {/* Modal Overlay */}
-      <dialog id="new_patient_modal" className="modal">
-        <div className="fixed inset-0 flex items-center justify-center bg-black/70 z-50 px-4">
-          <div className="w-full max-w-md bg-gray-900 rounded-xl shadow-lg border border-gray-700 p-6 relative">
+      <dialog id="new_patient_modal" className="modal fixed inset-0 z-50">
+        <div className="flex items-center justify-center w-full h-90vh bg-black/70 px-4">
+          <div className="w-full max-w-md sm:max-w-lg md:max-w-xl bg-gray-900 rounded-xl shadow-lg border border-gray-700 relative flex flex-col max-h-screen overflow-y-auto">
             {/* Close Button */}
             <button
               className="btn btn-sm btn-circle absolute right-3 top-3 bg-gray-800 text-yellow-400 hover:bg-yellow-500"
@@ -315,13 +315,16 @@ export default function DentalClinicLayout() {
             </button>
 
             {/* Title */}
-            <h3 className="text-xl font-bold mb-6 text-yellow-400 text-center">
+            <h3 className="text-xl font-bold py-6 text-yellow-400 text-center sticky top-0 bg-gray-900 z-10">
               Add New Patient
             </h3>
 
             {/* Form */}
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Name */}
+            <form
+              onSubmit={handleSubmit}
+              className="space-y-4 p-6 flex-1 overflow-y-auto"
+            >
+              {/* Full Name */}
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-1">
                   Full Name
@@ -395,12 +398,9 @@ export default function DentalClinicLayout() {
                   <option value="" disabled>
                     Select Service
                   </option>
-                  <option value="Male" className="text-white">
-                    Male
-                  </option>
-                  <option value="Female" className="text-white">
-                    Female
-                  </option>
+                  <option value="Consultation">Consultation</option>
+                  <option value="Checkup">Checkup</option>
+                  <option value="Treatment">Treatment</option>
                 </select>
               </div>
 
@@ -415,21 +415,17 @@ export default function DentalClinicLayout() {
                   required
                 >
                   <option value="" disabled>
-                    Select Service
+                    Select Type
                   </option>
-                  <option value="Male" className="text-white">
-                    Male
-                  </option>
-                  <option value="Female" className="text-white">
-                    Female
-                  </option>
+                  <option value="Regular">Regular</option>
+                  <option value="Emergency">Emergency</option>
                 </select>
               </div>
 
               {/* Service Price */}
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-1">
-                  Age
+                  Service Price
                 </label>
                 <input
                   type="number"
@@ -453,7 +449,7 @@ export default function DentalClinicLayout() {
               </div>
 
               {/* Actions */}
-              <div className="flex justify-end gap-3 pt-4">
+              <div className="flex justify-end gap-3 pt-4 sticky bottom-0 bg-gray-900">
                 <button
                   type="button"
                   className="btn bg-gray-700 text-gray-200 hover:bg-gray-600 rounded-lg"
