@@ -66,15 +66,18 @@ export default function PatientsLayout() {
 
   // Filter patients
   const filteredPatients = patients.filter((p) =>
-    p.name.toLowerCase().includes(search.toLowerCase())
-  );
+  [p.name, p.service, p.address]
+    .join(" ")
+    .toLowerCase()
+    .includes(search.toLowerCase())
+);
 
   return (
-    <div className="flex flex-col md:flex-row h-[calc(100vh-9rem)] bg-black text-gray-200">
+    <div className="flex flex-col md:flex-row h-[calc(100vh-9rem)] bg-red text-gray-200">
       {/* Left: Patients List Panel */}
       <aside className="w-full md:w-1/3 border-r border-gray-800 flex flex-col">
         {/* Sticky Search Bar */}
-        <div className="sticky top-0 bg-black p-4 -z-50 border-b border-gray-800">
+        <div className="sticky top-0 bg-black p-4 border-b border-gray-800">
           <div className="flex items-center gap-2">
             <FiSearch className="text-yellow-400" />
             <input
