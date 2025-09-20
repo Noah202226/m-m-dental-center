@@ -14,6 +14,13 @@ import Reports from "./dashboard/Reports";
 import Patients from "./dashboard/Patients";
 import { useAuthStore } from "../stores/authStore";
 import NewPatientModal from "./dashboard/actions/NewPatientModal";
+import { useServices } from "./hooks/useServices";
+import { databases } from "../lib/appwrite";
+
+const PATIENTS_COLLECTION_ID = "patients";
+const INSTALLMENTS_COLLECTION_ID = "installments";
+const DATABASE_ID = process.env.NEXT_PUBLIC_DATABASE_ID;
+import { ID } from "appwrite";
 
 const menuItems = [
   { id: "dashboard", label: "Dashboard", icon: <Home size={20} /> },
@@ -43,20 +50,112 @@ export default function DentalClinicLayout() {
     document.getElementById("new_patient_modal").close();
   };
 
-  const handleSubmit = (e) => {
+  const [serviceType, setServiceType] = useState("One-time");
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
 
     const patientData = {
-      name: formData.get("name"),
-      age: formData.get("age"),
-      address: formData.get("adress"),
+      patientName: formData.get("name"),
+      patientAge: Number(formData.get("age")),
+      address: formData.get("address"),
       gender: formData.get("gender"),
       contact: formData.get("contact"),
+      serviceName: services.find((s) => s.id === selectedService)?.name || "",
+      subServiceName:
+        services
+          .find((s) => s.id === selectedService)
+          ?.subServices.find((sub) => sub.id === selectedSubService)?.name ||
+        "",
+      serviceType: formData.get("service-type"), // One-time or Installment
+      servicePrice:
+        serviceType === "Installment"
+          ? Number(formData.get("totalPrice"))
+          : Number(formData.get("servicePrice")),
+      balance:
+        serviceType === "Installment"
+          ? Number(formData.get("totalPrice")) -
+            Number(formData.get("initialPayment"))
+          : 0, // initial balance is full price,
     };
 
-    console.log("New patient:", patientData);
+    try {
+      // 1️⃣ Save patient
+      const newPatient = await databases.createDocument(
+        DATABASE_ID,
+        PATIENTS_COLLECTION_ID,
+        ID.unique(),
+        patientData
+      );
+
+      console.log("Patient saved:", newPatient);
+
+      // 2️⃣ If Installment → save initial installment record
+      if (patientData.serviceType === "Installment") {
+        const initialPayment = Number(formData.get("initialPayment")) || 0;
+        const balanceAfter = patientData.servicePrice - initialPayment;
+
+        await databases.createDocument(
+          DATABASE_ID,
+          INSTALLMENTS_COLLECTION_ID,
+          ID.unique(),
+          {
+            patientId: newPatient.$id,
+            amountPaid: initialPayment,
+            paymentDate: new Date().toISOString(),
+            balanceAfter: balanceAfter,
+          }
+        );
+
+        console.log("Initial installment saved");
+
+        // 3️⃣ Save transaction for the initial payment
+        await databases.createDocument(
+          DATABASE_ID,
+          "transactions",
+          ID.unique(),
+          {
+            patientId: newPatient.$id,
+            patientName: newPatient.patientName,
+            serviceName: newPatient.serviceName,
+            subServiceName: newPatient.subServiceName ?? "",
+            amount: initialPayment,
+            paymentType: "Installment",
+            date: new Date().toISOString(),
+          }
+        );
+      } else {
+        // 4️⃣ If One-time → save full transaction
+        await databases.createDocument(
+          DATABASE_ID,
+          "transactions",
+          ID.unique(),
+          {
+            patientId: newPatient.$id,
+            patientName: newPatient.patientName,
+            serviceName: newPatient.serviceName,
+            subServiceName: newPatient.subServiceName ?? "",
+            amount: newPatient.servicePrice,
+            paymentType: "One-time",
+            date: new Date().toISOString(),
+          }
+        );
+      }
+
+      e.target.reset();
+      setSelectedService("");
+      setSelectedSubService("");
+      closeDialog();
+    } catch (error) {
+      console.error("Error saving patient:", error);
+    }
   };
+
+  const { services, loading } = useServices();
+
+  const [selectedService, setSelectedService] = useState("");
+  const [selectedSubService, setSelectedSubService] = useState("");
 
   return (
     <div className="flex h-screen bg-black text-gray-200">
@@ -332,11 +431,10 @@ export default function DentalClinicLayout() {
                 <input
                   type="text"
                   name="name"
-                  className="w-full input input-bordered bg-gray-800 border-gray-600 text-gray-100 rounded-lg"
+                  className="w-full input input-bordered bg-black text-yellow-400 border-yellow-400 rounded-lg"
                   required
                 />
               </div>
-
               {/* Age */}
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-1">
@@ -345,11 +443,10 @@ export default function DentalClinicLayout() {
                 <input
                   type="number"
                   name="age"
-                  className="w-full input input-bordered bg-gray-800 border-gray-600 text-gray-100 rounded-lg"
+                  className="w-full input input-bordered bg-black text-yellow-400 border-yellow-400 rounded-lg"
                   required
                 />
               </div>
-
               {/* Address */}
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-1">
@@ -358,11 +455,10 @@ export default function DentalClinicLayout() {
                 <input
                   type="text"
                   name="address"
-                  className="w-full input input-bordered bg-gray-800 border-gray-600 text-gray-100 rounded-lg"
+                  className="w-full input input-bordered bg-black text-yellow-400 border-yellow-400 rounded-lg"
                   required
                 />
               </div>
-
               {/* Gender */}
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-1">
@@ -370,7 +466,7 @@ export default function DentalClinicLayout() {
                 </label>
                 <select
                   name="gender"
-                  className="w-full select select-bordered bg-gray-800 border-gray-600 text-gray-100 rounded-lg"
+                  className="w-full select select-bordered bg-black text-yellow-400 border-yellow-400 rounded-lg"
                   required
                 >
                   <option value="" disabled>
@@ -384,57 +480,104 @@ export default function DentalClinicLayout() {
                   </option>
                 </select>
               </div>
-
               {/* Service Rendered */}
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">
-                  Service Rendered
-                </label>
+                <label className="block mb-2">Select Service</label>
                 <select
-                  name="service-rendered"
-                  className="w-full select select-bordered bg-gray-800 border-gray-600 text-gray-100 rounded-lg"
-                  required
+                  className="select select-bordered w-full mb-4 bg-black text-yellow-400 border-yellow-400"
+                  value={selectedService}
+                  onChange={(e) => {
+                    setSelectedService(e.target.value);
+                    setSelectedSubService(""); // reset sub when service changes
+                  }}
                 >
-                  <option value="" disabled>
-                    Select Service
-                  </option>
-                  <option value="Consultation">Consultation</option>
-                  <option value="Checkup">Checkup</option>
-                  <option value="Treatment">Treatment</option>
+                  <option value="">-- Choose a Service --</option>
+                  {services.map((service) => (
+                    <option key={service.id} value={service.id}>
+                      {service.name}
+                    </option>
+                  ))}
                 </select>
               </div>
+              {/* Sub-service Selection */}
+              {selectedService && (
+                <>
+                  <label className="block mb-2">Select Sub-service</label>
+                  <select
+                    className="select select-bordered w-full mb-4 bg-black text-yellow-400 border-yellow-400"
+                    value={selectedSubService}
+                    onChange={(e) => setSelectedSubService(e.target.value)}
+                  >
+                    <option value="">-- Choose a Sub-service --</option>
+                    {services
+                      .find((s) => s.id === selectedService)
+                      ?.subServices.map((sub) => (
+                        <option key={sub.id} value={sub.id}>
+                          {sub.name}
+                        </option>
+                      ))}
+                  </select>
+                </>
+              )}
 
-              {/* Service Type */}
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-1">
                   Service Type
                 </label>
                 <select
                   name="service-type"
-                  className="w-full select select-bordered bg-gray-800 border-gray-600 text-gray-100 rounded-lg"
-                  required
+                  value={serviceType}
+                  onChange={(e) => setServiceType(e.target.value)}
+                  className="w-full input input-bordered bg-black text-yellow-400 border-yellow-400 rounded-lg"
                 >
-                  <option value="" disabled>
-                    Select Type
-                  </option>
-                  <option value="Regular">Regular</option>
-                  <option value="Emergency">Emergency</option>
+                  <option value="One-time">One-time</option>
+                  <option value="Installment">Installment</option>
                 </select>
               </div>
 
-              {/* Service Price */}
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">
-                  Service Price
-                </label>
-                <input
-                  type="number"
-                  name="servicePrice"
-                  className="w-full input input-bordered bg-gray-800 border-gray-600 text-gray-100 rounded-lg"
-                  required
-                />
-              </div>
+              {/* Installment plan */}
+              {serviceType === "Installment" && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-1">
+                      Total Service Price
+                    </label>
+                    <input
+                      type="number"
+                      name="totalPrice"
+                      className="w-full input input-bordered bg-black text-yellow-400 border-yellow-400 rounded-lg"
+                      required
+                    />
+                  </div>
 
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-1">
+                      Initial Payment
+                    </label>
+                    <input
+                      type="number"
+                      name="initialPayment"
+                      className="w-full input input-bordered bg-black text-yellow-400 border-yellow-400 rounded-lg"
+                      required
+                    />
+                  </div>
+                </>
+              )}
+
+              {/* Service Price - only show for One-time payment */}
+              {serviceType === "One-time" && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">
+                    Service Price
+                  </label>
+                  <input
+                    type="number"
+                    name="servicePrice"
+                    className="w-full input input-bordered bg-black text-yellow-400 border-yellow-400"
+                    required
+                  />
+                </div>
+              )}
               {/* Contact */}
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-1">
@@ -443,11 +586,10 @@ export default function DentalClinicLayout() {
                 <input
                   type="text"
                   name="contact"
-                  className="w-full input input-bordered bg-gray-800 border-gray-600 text-gray-100 rounded-lg"
+                  className="w-full input input-bordered bg-black text-yellow-400 border-yellow-400 rounded-lg"
                   required
                 />
               </div>
-
               {/* Actions */}
               <div className="flex justify-end gap-3 pt-4 sticky bottom-0 bg-gray-900">
                 <button

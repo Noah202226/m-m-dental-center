@@ -1,82 +1,115 @@
 "use client";
 
-import { useState } from "react";
-import { FiSearch, FiUser, FiDollarSign } from "react-icons/fi";
+import { useState, useEffect } from "react";
+import { FiSearch, FiUser, FiTrash2 } from "react-icons/fi";
+import { databases, DATABASE_ID, ID } from "../../lib/appwrite";
+import { Query } from "appwrite";
+import InstallmentsPanel from "./actions/InstallmentsPanel";
+import toast from "react-hot-toast";
+
+const PATIENTS_COLLECTION_ID = "patients";
+const TRANSACTIONS_COLLECTION_ID = "transactions";
+const INSTALLMENTS_COLLECTION_ID = "installments"; // optional if you also want to delete installments
 
 export default function PatientsLayout() {
-  const [selectedPatient, setSelectedPatient] = useState({
-    id: 1,
-    name: "Noa Ligpitan",
-    age: 28,
-    service: "Braces",
-    balance: 12000,
-  });
+  const [patients, setPatients] = useState([]);
+  const [selectedPatient, setSelectedPatient] = useState(null);
   const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(true);
 
-  const patients = [
-    {
-      id: 1,
-      name: "Noa Ligpitan",
-      age: 28,
-      service: "Braces",
-      balance: 12000,
-      address: "Makapilapil San Ildefonso, Bulacan",
-    },
-    {
-      id: 2,
-      name: "Maria Santos",
-      age: 32,
-      service: "Teeth Whitening",
-      balance: 0,
-      address: "Makapilapil San Ildefonso, Bulacan",
-    },
-    {
-      id: 3,
-      name: "Juan Dela Cruz",
-      age: 25,
-      service: "Braces",
-      balance: 8000,
-      address: "Makapilapil San Ildefonso, Bulacan",
-    },
-    {
-      id: 4,
-      name: "Mark Reyes",
-      age: 30,
-      service: "Cleaning",
-      balance: 0,
-      address: "Makapilapil San Ildefonso, Bulacan",
-    },
-    {
-      id: 5,
-      name: "Ana Cruz",
-      age: 27,
-      service: "Braces",
-      balance: 15000,
-      address: "Makapilapil San Ildefonso, Bulacan",
-    },
-    {
-      id: 6,
-      name: "Carlos Lopez",
-      age: 40,
-      service: "Extraction",
-      balance: 0,
-      address: "Makapilapil San Ildefonso, Bulacan",
-    },
-  ];
+  const fetchPatients = async () => {
+    try {
+      const response = await databases.listDocuments(
+        DATABASE_ID,
+        PATIENTS_COLLECTION_ID
+      );
+      setPatients(response.documents);
+      if (response.documents.length > 0) {
+        setSelectedPatient(response.documents[0]);
+      }
+    } catch (error) {
+      console.error("Error fetching patients:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  // Filter patients
+  useEffect(() => {
+    fetchPatients();
+  }, []);
+
+  // Delete patient + transactions (+ installments optional)
+  const deletePatient = async (patientId) => {
+    if (
+      !confirm(
+        "Are you sure you want to delete this patient and all related transactions?"
+      )
+    ) {
+      return;
+    }
+
+    try {
+      // 1️⃣ Delete transactions for this patient
+      const txns = await databases.listDocuments(
+        DATABASE_ID,
+        TRANSACTIONS_COLLECTION_ID,
+        [Query.equal("patientId", patientId)]
+      );
+
+      for (const txn of txns.documents) {
+        await databases.deleteDocument(
+          DATABASE_ID,
+          TRANSACTIONS_COLLECTION_ID,
+          txn.$id
+        );
+      }
+
+      // 2️⃣ (Optional) Delete installments for this patient
+      const installments = await databases.listDocuments(
+        DATABASE_ID,
+        INSTALLMENTS_COLLECTION_ID,
+        [Query.equal("patientId", patientId)]
+      );
+
+      for (const inst of installments.documents) {
+        await databases.deleteDocument(
+          DATABASE_ID,
+          INSTALLMENTS_COLLECTION_ID,
+          inst.$id
+        );
+      }
+
+      // 3️⃣ Delete patient record
+      await databases.deleteDocument(
+        DATABASE_ID,
+        PATIENTS_COLLECTION_ID,
+        patientId
+      );
+
+      // Refresh state
+      setPatients((prev) => prev.filter((p) => p.$id !== patientId));
+      if (selectedPatient?.$id === patientId) {
+        setSelectedPatient(null);
+      }
+
+      toast.success("Patient and related records deleted successfully.");
+    } catch (error) {
+      console.error("Error deleting patient:", error);
+      alert("Failed to delete patient.");
+    }
+  };
+
   const filteredPatients = patients.filter((p) =>
-  [p.name, p.service, p.address]
-    .join(" ")
-    .toLowerCase()
-    .includes(search.toLowerCase())
-);
+    [p.name, p.serviceName, p.address]
+      .join(" ")
+      .toLowerCase()
+      .includes(search.toLowerCase())
+  );
 
   return (
-    <div className="flex flex-col md:flex-row h-[calc(100vh-9rem)] bg-red text-gray-200">
-      {/* Left: Patients List Panel */}
+    <div className="flex flex-col md:flex-row h-[calc(100vh-9rem)] bg-black text-gray-200">
+      {/* Left: Patients List */}
       <aside className="w-full md:w-1/3 border-r border-gray-800 flex flex-col">
-        {/* Sticky Search Bar */}
         <div className="sticky top-0 bg-black p-4 border-b border-gray-800">
           <div className="flex items-center gap-2">
             <FiSearch className="text-yellow-400" />
@@ -89,30 +122,38 @@ export default function PatientsLayout() {
           </div>
         </div>
 
-        {/* Scrollable Patient List */}
         <div className="max-h-30 md:max-h-110 overflow-y-auto p-2 space-y-1">
-          {filteredPatients.map((p) => (
-            <button
-              key={p.id}
-              onClick={() => setSelectedPatient(p)}
-              className={`w-full text-left p-3 rounded-lg transition ${
-                selectedPatient?.id === p.id
-                  ? "bg-yellow-500 text-black"
-                  : "bg-gray-800 text-white hover:bg-gray-700"
-              }
-              ${p.balance > 0 ? "border-l-4 border-red-500" : "border-none"}
-              ${p.balance === 0 ? "opacity-70" : "opacity-100"}
-              ${p.balance > 0 ? "font-semibold" : "font-normal"}
-              
-              ${p.service === "Braces" ? "italic" : ""}
-              `}
-            >
-              <h3 className="font-semibold">{p.name}</h3>
-              <p className="text-sm opacity-75">{p.service}</p>
-              <p className="text-sm opacity-75">{p.address}</p>
-            </button>
-          ))}
-          {filteredPatients.length === 0 && (
+          {loading ? (
+            <p className="text-gray-500 text-sm">Loading patients...</p>
+          ) : filteredPatients.length > 0 ? (
+            filteredPatients.map((p) => (
+              <div
+                key={p.$id}
+                className={`flex items-center justify-between w-full p-3 rounded-lg transition ${
+                  selectedPatient?.$id === p.$id
+                    ? "bg-yellow-500 text-black"
+                    : "bg-gray-800 text-white hover:bg-gray-700"
+                }`}
+              >
+                <button
+                  onClick={() => setSelectedPatient(p)}
+                  className="flex-1 text-left"
+                >
+                  <h3 className="font-semibold">{p.patientName}</h3>
+                  <p className="text-sm opacity-75">{p.address}</p>
+                  <p className="text-sm opacity-75">{p.serviceName}</p>
+                  <p className="text-sm opacity-75">{p.serviceType}</p>
+                </button>
+                <button
+                  onClick={() => deletePatient(p.$id)}
+                  className="ml-2 text-red-400 hover:text-red-600"
+                  title="Delete Patient"
+                >
+                  <FiTrash2 />
+                </button>
+              </div>
+            ))
+          ) : (
             <p className="text-gray-500 text-sm">No patients found.</p>
           )}
         </div>
@@ -122,7 +163,6 @@ export default function PatientsLayout() {
       <main className="flex-1 p-6 overflow-y-auto">
         {selectedPatient ? (
           <div className="space-y-4">
-            {/* Patient Info */}
             <div className="bg-gray-900 p-6 rounded-xl border border-gray-800 shadow-md">
               <h2 className="text-2xl font-bold text-yellow-400 mb-3">
                 {selectedPatient.name}
@@ -133,36 +173,14 @@ export default function PatientsLayout() {
               </p>
               <p className="text-gray-300">
                 <span className="font-semibold">Service:</span>{" "}
-                {selectedPatient.service}
+                {selectedPatient.serviceName}
               </p>
             </div>
 
-            {/* Installment Payments */}
-            <div className="bg-gray-900 p-6 rounded-xl border border-gray-800 shadow-md">
-              <h3 className="font-semibold text-yellow-400 mb-3 flex items-center gap-2">
-                <FiDollarSign /> Installment Payments
-              </h3>
-              {selectedPatient.balance > 0 ? (
-                <div>
-                  <p className="text-gray-300">
-                    Remaining Balance:{" "}
-                    <span className="text-yellow-400 font-bold">
-                      ₱{selectedPatient.balance.toLocaleString()}
-                    </span>
-                  </p>
-                  <div className="mt-4 flex gap-2">
-                    <button className="btn btn-sm bg-yellow-400 hover:bg-yellow-500 text-black rounded-lg">
-                      Add Payment
-                    </button>
-                    <button className="btn btn-sm bg-gray-800 hover:bg-gray-700 text-yellow-400 rounded-lg">
-                      View History
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <p className="text-green-400 font-bold">Fully Paid 🎉</p>
-              )}
-            </div>
+            <InstallmentsPanel
+              patient={selectedPatient}
+              fetchPatients={fetchPatients}
+            />
           </div>
         ) : (
           <div className="h-full flex items-center justify-center text-gray-500">
