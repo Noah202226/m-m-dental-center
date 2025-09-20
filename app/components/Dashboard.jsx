@@ -36,6 +36,28 @@ export default function DentalClinicLayout() {
     return () => clearInterval(timer);
   }, []);
 
+  const openDialog = () => {
+    document.getElementById("new_patient_modal").showModal();
+  };
+  const closeDialog = () => {
+    document.getElementById("new_patient_modal").close();
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+
+    const patientData = {
+      name: formData.get("name"),
+      age: formData.get("age"),
+      address: formData.get("adress"),
+      gender: formData.get("gender"),
+      contact: formData.get("contact"),
+    };
+
+    console.log("New patient:", patientData);
+  };
+
   return (
     <div className="flex h-screen bg-black text-gray-200">
       {/* Sidebar (hidden on small screens, togglable) */}
@@ -141,7 +163,7 @@ export default function DentalClinicLayout() {
 
             {/* Action Buttons (Desktop) */}
             <div className="hidden md:flex gap-2 z-10">
-              <NewPatientModal />
+              <NewPatientModal openDialog={openDialog} />
               <button
                 onClick={() => console.log("New Expense")}
                 className="px-3 py-1.5 rounded-md bg-gray-900 text-yellow-400 text-sm font-medium border border-gray-700 hover:bg-gray-800"
@@ -170,7 +192,9 @@ export default function DentalClinicLayout() {
               >
                 <li className="z-50">
                   <button
-                    onClick={() => console.log("New Patient")}
+                    onClick={() =>
+                      document.getElementById("new_patient_modal").showModal()
+                    } // use state here
                     className="text-yellow-400 hover:bg-gray-800"
                   >
                     + Patient
@@ -277,6 +301,177 @@ export default function DentalClinicLayout() {
           {active === "settings" && <SettingsData />}
         </section>
       </main>
+
+      {/* Modal Overlay */}
+      <dialog id="new_patient_modal" className="modal">
+        <div className="fixed inset-0 flex items-center justify-center bg-black/70 z-50 px-4">
+          <div className="w-full max-w-md bg-gray-900 rounded-xl shadow-lg border border-gray-700 p-6 relative">
+            {/* Close Button */}
+            <button
+              className="btn btn-sm btn-circle absolute right-3 top-3 bg-gray-800 text-yellow-400 hover:bg-yellow-500"
+              onClick={() => closeDialog()}
+            >
+              ✕
+            </button>
+
+            {/* Title */}
+            <h3 className="text-xl font-bold mb-6 text-yellow-400 text-center">
+              Add New Patient
+            </h3>
+
+            {/* Form */}
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Name */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">
+                  Full Name
+                </label>
+                <input
+                  type="text"
+                  name="name"
+                  className="w-full input input-bordered bg-gray-800 border-gray-600 text-gray-100 rounded-lg"
+                  required
+                />
+              </div>
+
+              {/* Age */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">
+                  Age
+                </label>
+                <input
+                  type="number"
+                  name="age"
+                  className="w-full input input-bordered bg-gray-800 border-gray-600 text-gray-100 rounded-lg"
+                  required
+                />
+              </div>
+
+              {/* Address */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">
+                  Address
+                </label>
+                <input
+                  type="text"
+                  name="address"
+                  className="w-full input input-bordered bg-gray-800 border-gray-600 text-gray-100 rounded-lg"
+                  required
+                />
+              </div>
+
+              {/* Gender */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">
+                  Gender
+                </label>
+                <select
+                  name="gender"
+                  className="w-full select select-bordered bg-gray-800 border-gray-600 text-gray-100 rounded-lg"
+                  required
+                >
+                  <option value="" disabled>
+                    Select Gender
+                  </option>
+                  <option value="Male" className="text-white">
+                    Male
+                  </option>
+                  <option value="Female" className="text-white">
+                    Female
+                  </option>
+                </select>
+              </div>
+
+              {/* Service Rendered */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">
+                  Service Rendered
+                </label>
+                <select
+                  name="service-rendered"
+                  className="w-full select select-bordered bg-gray-800 border-gray-600 text-gray-100 rounded-lg"
+                  required
+                >
+                  <option value="" disabled>
+                    Select Service
+                  </option>
+                  <option value="Male" className="text-white">
+                    Male
+                  </option>
+                  <option value="Female" className="text-white">
+                    Female
+                  </option>
+                </select>
+              </div>
+
+              {/* Service Type */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">
+                  Service Type
+                </label>
+                <select
+                  name="service-type"
+                  className="w-full select select-bordered bg-gray-800 border-gray-600 text-gray-100 rounded-lg"
+                  required
+                >
+                  <option value="" disabled>
+                    Select Service
+                  </option>
+                  <option value="Male" className="text-white">
+                    Male
+                  </option>
+                  <option value="Female" className="text-white">
+                    Female
+                  </option>
+                </select>
+              </div>
+
+              {/* Service Price */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">
+                  Age
+                </label>
+                <input
+                  type="number"
+                  name="servicePrice"
+                  className="w-full input input-bordered bg-gray-800 border-gray-600 text-gray-100 rounded-lg"
+                  required
+                />
+              </div>
+
+              {/* Contact */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">
+                  Contact Number
+                </label>
+                <input
+                  type="text"
+                  name="contact"
+                  className="w-full input input-bordered bg-gray-800 border-gray-600 text-gray-100 rounded-lg"
+                  required
+                />
+              </div>
+
+              {/* Actions */}
+              <div className="flex justify-end gap-3 pt-4">
+                <button
+                  type="button"
+                  className="btn bg-gray-700 text-gray-200 hover:bg-gray-600 rounded-lg"
+                  onClick={() => closeDialog()}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn bg-yellow-400 text-black hover:bg-yellow-500 rounded-lg"
+                >
+                  Save
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </dialog>
     </div>
   );
 }
