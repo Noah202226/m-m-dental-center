@@ -2,102 +2,29 @@
 
 import { useState, useEffect } from "react";
 import { FiSearch, FiUser, FiTrash2 } from "react-icons/fi";
-import { databases, DATABASE_ID, ID } from "../../lib/appwrite";
-import { Query } from "appwrite";
-import InstallmentsPanel from "./actions/InstallmentsPanel";
-import toast from "react-hot-toast";
 
-const PATIENTS_COLLECTION_ID = "patients";
-const TRANSACTIONS_COLLECTION_ID = "transactions";
-const INSTALLMENTS_COLLECTION_ID = "installments"; // optional if you also want to delete installments
+import InstallmentsPanel from "./actions/InstallmentsPanel";
+
+import { usePatientStore } from "../../stores/usePatientStore";
 
 export default function PatientsLayout() {
-  const [patients, setPatients] = useState([]);
-  const [selectedPatient, setSelectedPatient] = useState(null);
+  // const [patients, setPatients] = useState([]);
+  // const [selectedPatient, setSelectedPatient] = useState(null);
   const [search, setSearch] = useState("");
-  const [loading, setLoading] = useState(true);
+  // const [loading, setLoading] = useState(true);
 
-  const fetchPatients = async () => {
-    try {
-      const response = await databases.listDocuments(
-        DATABASE_ID,
-        PATIENTS_COLLECTION_ID
-      );
-      setPatients(response.documents);
-      if (response.documents.length > 0) {
-        setSelectedPatient(response.documents[0]);
-      }
-    } catch (error) {
-      console.error("Error fetching patients:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const {
+    patients,
+    fetchPatients,
+    loading,
+    selectedPatient,
+    setSelectedPatient,
+    deletePatient,
+  } = usePatientStore();
 
   useEffect(() => {
     fetchPatients();
   }, []);
-
-  // Delete patient + transactions (+ installments optional)
-  const deletePatient = async (patientId) => {
-    if (
-      !confirm(
-        "Are you sure you want to delete this patient and all related transactions?"
-      )
-    ) {
-      return;
-    }
-
-    try {
-      // 1️⃣ Delete transactions for this patient
-      const txns = await databases.listDocuments(
-        DATABASE_ID,
-        TRANSACTIONS_COLLECTION_ID,
-        [Query.equal("patientId", patientId)]
-      );
-
-      for (const txn of txns.documents) {
-        await databases.deleteDocument(
-          DATABASE_ID,
-          TRANSACTIONS_COLLECTION_ID,
-          txn.$id
-        );
-      }
-
-      // 2️⃣ (Optional) Delete installments for this patient
-      const installments = await databases.listDocuments(
-        DATABASE_ID,
-        INSTALLMENTS_COLLECTION_ID,
-        [Query.equal("patientId", patientId)]
-      );
-
-      for (const inst of installments.documents) {
-        await databases.deleteDocument(
-          DATABASE_ID,
-          INSTALLMENTS_COLLECTION_ID,
-          inst.$id
-        );
-      }
-
-      // 3️⃣ Delete patient record
-      await databases.deleteDocument(
-        DATABASE_ID,
-        PATIENTS_COLLECTION_ID,
-        patientId
-      );
-
-      // Refresh state
-      setPatients((prev) => prev.filter((p) => p.$id !== patientId));
-      if (selectedPatient?.$id === patientId) {
-        setSelectedPatient(null);
-      }
-
-      toast.success("Patient and related records deleted successfully.");
-    } catch (error) {
-      console.error("Error deleting patient:", error);
-      alert("Failed to delete patient.");
-    }
-  };
 
   const filteredPatients = patients.filter((p) =>
     [p.name, p.serviceName, p.address]
@@ -145,7 +72,9 @@ export default function PatientsLayout() {
                   <p className="text-sm opacity-75">{p.serviceType}</p>
                 </button>
                 <button
-                  onClick={() => deletePatient(p.$id)}
+                  onClick={() => {
+                    deletePatient(p.$id);
+                  }}
                   className="ml-2 text-red-400 hover:text-red-600"
                   title="Delete Patient"
                 >

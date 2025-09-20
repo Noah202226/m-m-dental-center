@@ -12,7 +12,6 @@ import {
 import SettingsData from "./dashboard/Settings";
 import Reports from "./dashboard/Reports";
 import Patients from "./dashboard/Patients";
-import { useAuthStore } from "../stores/authStore";
 import NewPatientModal from "./dashboard/actions/NewPatientModal";
 import { useServices } from "./hooks/useServices";
 import { databases } from "../lib/appwrite";
@@ -21,6 +20,10 @@ const PATIENTS_COLLECTION_ID = "patients";
 const INSTALLMENTS_COLLECTION_ID = "installments";
 const DATABASE_ID = process.env.NEXT_PUBLIC_DATABASE_ID;
 import { ID } from "appwrite";
+import { usePatientStore } from "../stores/usePatientStore";
+import { useAuthStore } from "../stores/authStore";
+
+import toast from "react-hot-toast";
 
 const menuItems = [
   { id: "dashboard", label: "Dashboard", icon: <Home size={20} /> },
@@ -36,7 +39,9 @@ export default function DentalClinicLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Logout function (replace with your auth logic)
-  const { logout } = useAuthStore((state) => state);
+  const { logout, current } = useAuthStore((state) => state);
+
+  const { fetchPatients, patients } = usePatientStore((state) => state);
 
   useEffect(() => {
     const timer = setInterval(() => setDateTime(new Date()), 1000);
@@ -144,6 +149,8 @@ export default function DentalClinicLayout() {
       }
 
       e.target.reset();
+      toast.success("Patient added successfully!");
+      fetchPatients();
       setSelectedService("");
       setSelectedSubService("");
       closeDialog();
@@ -255,7 +262,7 @@ export default function DentalClinicLayout() {
                   Total Patients
                 </p>
                 <p className="text-base sm:text-lg font-bold text-yellow-400">
-                  134
+                  {patients.length}
                 </p>
               </div>
             </div>
@@ -326,7 +333,7 @@ export default function DentalClinicLayout() {
                 className="flex items-center gap-2 sm:gap-3 cursor-pointer"
               >
                 <span className="hidden sm:inline text-sm">
-                  Hello, Dr. Smith
+                  {current?.email}
                 </span>
                 <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-yellow-400 flex items-center justify-center text-black font-bold">
                   DS
