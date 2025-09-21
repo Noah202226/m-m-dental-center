@@ -22,10 +22,6 @@ export default function PatientsLayout() {
     deletePatient,
   } = usePatientStore();
 
-  useEffect(() => {
-    fetchPatients();
-  }, []);
-
   const filteredPatients = patients.filter((p) =>
     [p.name, p.serviceName, p.address]
       .join(" ")

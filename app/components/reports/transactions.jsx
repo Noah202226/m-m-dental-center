@@ -1,47 +1,26 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { databases } from "../../lib/appwrite";
+import { useEffect, useMemo, useState } from "react";
+import { useTransactionStore } from "../../stores/useTransactionStore";
 import { FiDollarSign, FiFilter } from "react-icons/fi";
 
-const DATABASE_ID = process.env.NEXT_PUBLIC_DATABASE_ID;
-const TRANSACTIONS_COLLECTION_ID = "transactions";
-
 export default function SalesDashboard() {
-  const [transactions, setTransactions] = useState([]);
-  const [totals, setTotals] = useState({ today: 0, month: 0, year: 0 });
+  const { transactions, fetchTransactions, filterByDate, filteredTotal } =
+    useTransactionStore();
+
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  const [filteredTotal, setFilteredTotal] = useState(0);
 
-  // Fetch all transactions
-  const fetchTransactions = async () => {
-    try {
-      const res = await databases.listDocuments(
-        DATABASE_ID,
-        TRANSACTIONS_COLLECTION_ID,
-        []
-      );
-      const docs = res.documents;
-      setTransactions(docs);
-
-      // Compute totals
-      calculateTotals(docs);
-    } catch (error) {
-      console.error("Error fetching transactions:", error);
-    }
-  };
-
-  // Compute daily/monthly/yearly totals
-  const calculateTotals = (docs) => {
-    const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+  // Calculate totals (today, month, year) on the fly
+  const totals = useMemo(() => {
+    const today = new Date().toISOString().split("T")[0];
     const now = new Date();
 
     let todayTotal = 0,
       monthTotal = 0,
       yearTotal = 0;
 
-    docs.forEach((t) => {
+    transactions.forEach((t) => {
       const d = new Date(t.date);
 
       if (t.date.startsWith(today)) todayTotal += t.amount;
@@ -53,37 +32,12 @@ export default function SalesDashboard() {
       if (d.getFullYear() === now.getFullYear()) yearTotal += t.amount;
     });
 
-    setTotals({ today: todayTotal, month: monthTotal, year: yearTotal });
-  };
-
-  // Filter transactions by date range
-  const filterByDate = async () => {
-    if (!startDate || !endDate) return;
-
-    try {
-      const res = await databases.listDocuments(
-        DATABASE_ID,
-        TRANSACTIONS_COLLECTION_ID,
-        [
-          Query.greaterThanEqual("date", new Date(startDate).toISOString()),
-          Query.lessThanEqual("date", new Date(endDate).toISOString()),
-        ]
-      );
-
-      const docs = res.documents;
-      setTransactions(docs);
-
-      // Calculate filtered total
-      const total = docs.reduce((sum, t) => sum + t.amount, 0);
-      setFilteredTotal(total);
-    } catch (error) {
-      console.error("Error filtering transactions:", error);
-    }
-  };
+    return { today: todayTotal, month: monthTotal, year: yearTotal };
+  }, [transactions]);
 
   useEffect(() => {
     fetchTransactions();
-  }, []);
+  }, [fetchTransactions]);
 
   return (
     <div className="p-6 text-yellow-400">
@@ -127,7 +81,7 @@ export default function SalesDashboard() {
           className="input input-sm bg-black border border-yellow-400 text-yellow-400 rounded-lg"
         />
         <button
-          onClick={filterByDate}
+          onClick={() => filterByDate(startDate, endDate)}
           className="btn btn-sm bg-yellow-400 text-black hover:bg-yellow-500 flex items-center gap-2"
         >
           <FiFilter /> Filter

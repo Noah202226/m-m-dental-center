@@ -8,7 +8,7 @@ export default function SettingsTabs() {
   const tabs = [
     { key: "personalization", label: "PERSONALIZATION" },
     { key: "users", label: "USERS" },
-    { key: "dropdown", label: "DROPDOWN VALUES" },
+    { key: "services", label: "SERVICES" },
     { key: "inventory", label: "PRODUCT INVENTORY" },
   ];
 
@@ -60,7 +60,7 @@ export default function SettingsTabs() {
         {activeTab === "users" && (
           <p className="text-yellow-400">👥 Manage users here...</p>
         )}
-        {activeTab === "dropdown" && <ServicesData />}
+        {activeTab === "services" && <ServicesData />}
         {activeTab === "inventory" && (
           <div className="p-6 bg-yellow-400 text-black text-center rounded font-semibold">
             🚧 Features coming soon...

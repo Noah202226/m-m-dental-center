@@ -38,8 +38,33 @@ export default function ViewHistoryModal({ patient, onClose }) {
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
       <div className="bg-gray-900 p-6 rounded-xl border border-gray-700 w-[28rem] max-h-[80vh] overflow-y-auto">
         <h2 className="text-xl font-bold text-yellow-400 mb-4">
-          Payment History for {patient.name}
+          Payment History for {patient.patientName}
         </h2>
+
+        <div className="mb-4 space-y-1 text-sm">
+          <p className="text-gray-300">
+            <span className="font-semibold text-white ">Service Rendered:</span>
+            {loading ? (
+              " Computing..."
+            ) : (
+              <span className="text-[var(--theme-text)]">
+                {" "}
+                {patient?.serviceName.toLocaleString()}{" "}
+              </span>
+            )}
+          </p>
+          <p className="text-gray-300">
+            <span className="font-semibold text-white ">Service Amount:</span>
+            {loading ? (
+              " Computing..."
+            ) : (
+              <span className="text-[var(--theme-text)]">
+                {" "}
+                {patient?.servicePrice.toLocaleString()}{" "}
+              </span>
+            )}
+          </p>
+        </div>
 
         <div className="flex justify-between mb-4 text-sm">
           <p className="text-gray-300">
