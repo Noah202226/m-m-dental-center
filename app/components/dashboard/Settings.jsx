@@ -5,6 +5,8 @@ import { motion } from "framer-motion";
 import { useSettingsStore } from "../../stores/useSettingStore";
 import ServicesData from "../settings/services/Services";
 import { Edit, Trash, Plus } from "lucide-react";
+import CategoriesSettings from "../settings/CategoryTab";
+import PersonalizationTab from "../settings/PersonalizationTab";
 
 export default function SettingsTabs() {
   const [activeTab, setActiveTab] = useState("personalization");
@@ -71,36 +73,7 @@ export default function SettingsTabs() {
       {/* Tab Content */}
       <div className="mt-6 p-4  border border-yellow-400 rounded-lg bg-black">
         {/* 🔹 Personalization */}
-        {activeTab === "personalization" && (
-          <div className="flex flex-col gap-4 text-yellow-400">
-            <p className="font-semibold">Choose Theme:</p>
-            <div className="flex gap-4">
-              <button
-                onClick={() => setTheme("dark")}
-                className={`btn ${
-                  theme === "dark"
-                    ? "bg-yellow-400 text-black"
-                    : "bg-gray-800 text-yellow-400"
-                }`}
-              >
-                Dark
-              </button>
-              <button
-                onClick={() => setTheme("light")}
-                className={`btn ${
-                  theme === "light"
-                    ? "bg-yellow-400 text-black"
-                    : "bg-gray-800 text-yellow-400"
-                }`}
-              >
-                Light
-              </button>
-            </div>
-            <p>
-              🌙 Current theme: <span className="font-bold">{theme}</span>
-            </p>
-          </div>
-        )}
+        {activeTab === "personalization" && <PersonalizationTab />}
 
         {/* 🔹 Users */}
         {activeTab === "users" && (
@@ -166,64 +139,7 @@ export default function SettingsTabs() {
         {activeTab === "services" && <ServicesData />}
 
         {/* 🔹 Inventory */}
-        {activeTab === "inventory" && (
-          <div className="text-yellow-400 space-y-4">
-            {/* Add Product */}
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={newProduct.name}
-                onChange={(e) =>
-                  setNewProduct((p) => ({ ...p, name: e.target.value }))
-                }
-                placeholder="Product Name"
-                className="input input-bordered bg-black border-yellow-400"
-              />
-              <input
-                type="number"
-                value={newProduct.price}
-                onChange={(e) =>
-                  setNewProduct((p) => ({ ...p, price: e.target.value }))
-                }
-                placeholder="Price"
-                className="input input-bordered bg-black border-yellow-400"
-              />
-              <button
-                onClick={() => {
-                  if (!newProduct.name || !newProduct.price) return;
-                  addProduct(newProduct);
-                  setNewProduct({ name: "", price: "" });
-                }}
-                className="btn bg-yellow-400 text-black border-none"
-              >
-                <Plus size={16} />
-              </button>
-            </div>
-
-            {/* Product List */}
-            <div className="space-y-2">
-              {products.map((p) => (
-                <div
-                  key={p.id}
-                  className="flex justify-between items-center border-b border-yellow-400 pb-1"
-                >
-                  <span>
-                    {p.name} - ₱{p.price}
-                  </span>
-                  <button
-                    onClick={() => deleteProduct(p.id)}
-                    className="btn btn-ghost btn-xs text-red-600"
-                  >
-                    <Trash size={16} />
-                  </button>
-                </div>
-              ))}
-              {products.length === 0 && (
-                <p className="italic">No products in inventory...</p>
-              )}
-            </div>
-          </div>
-        )}
+        {activeTab === "inventory" && <CategoriesSettings />}
       </div>
     </div>
   );

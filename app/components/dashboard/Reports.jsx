@@ -10,7 +10,7 @@ export default function ReportsTabs() {
   const [activeTab, setActiveTab] = useState("transactions");
 
   const tabs = [
-    { key: "transactions", label: "TRANSACTIONS" },
+    { key: "transactions", label: "SALES" },
     { key: "expenses", label: "EXPENSES" },
     // { key: "patients", label: "PATIENTS" },
     // { key: "financial", label: "FINANCIAL SUMMARY" },

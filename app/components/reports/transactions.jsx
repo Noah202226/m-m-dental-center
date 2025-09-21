@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTransactionStore } from "../../stores/useTransactionStore";
 import { FiDollarSign, FiFilter } from "react-icons/fi";
+import { FaPesoSign } from "react-icons/fa6";
 
 // PDF
 import { jsPDF } from "jspdf";
@@ -128,7 +129,7 @@ export default function SalesDashboard() {
       {/* 🔹 Fixed Header (totals + filter) */}
       <div className="shrink-0 bg-black pb-2 z-5">
         <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-          <FiDollarSign /> Sales Dashboard
+          <FaPesoSign /> Sales Dashboard
         </h2>
 
         {/* Totals */}

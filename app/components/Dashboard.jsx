@@ -22,16 +22,19 @@ const DATABASE_ID = process.env.NEXT_PUBLIC_DATABASE_ID;
 import { ID } from "appwrite";
 import { usePatientStore } from "../stores/usePatientStore";
 import { useAuthStore } from "../stores/authStore";
+import { usePersonalizationStore } from "../stores/usePersonalizationStore";
 
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
 import ExpenseModal from "./dashboard/actions/ExpenseModal";
 import DashboardData from "./dashboard/DashboardData";
+import Products from "./dashboard/Products";
 
 const menuItems = [
   { id: "dashboard", label: "Dashboard", icon: <Home size={20} /> },
   // { id: "appointments", label: "Appointments", icon: <Calendar size={20} /> },
   { id: "patients", label: "Patients", icon: <Users size={20} /> },
+  { id: "products", label: "Products", icon: <Users size={20} /> },
   { id: "reports", label: "Reports", icon: <Stethoscope size={20} /> },
   { id: "settings", label: "Settings", icon: <Settings size={20} /> },
 ];
@@ -51,6 +54,9 @@ export default function DentalClinicLayout() {
   const { logout, current } = useAuthStore((state) => state);
 
   const { fetchPatients, patients } = usePatientStore((state) => state);
+  const { clientTitle, clientInitial } = usePersonalizationStore(
+    (state) => state
+  );
 
   useEffect(() => {
     const timer = setInterval(() => setDateTime(new Date()), 1000);
@@ -196,7 +202,7 @@ export default function DentalClinicLayout() {
             className="top-4 left-4 w-24 opacity-80"
           />
           <h1 className="text-2xl font-bold text-yellow-400">
-            M&M Dental Center
+            {clientTitle ? clientTitle : "M&M Dental Center"}
           </h1>
           <button
             className="md:hidden text-gray-400"
@@ -372,7 +378,7 @@ export default function DentalClinicLayout() {
                   {current?.email}
                 </span>
                 <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-yellow-400 flex items-center justify-center text-black font-bold">
-                  DS
+                  {clientInitial ? clientInitial : "MM"}
                 </div>
               </div>
               <ul
@@ -413,6 +419,7 @@ export default function DentalClinicLayout() {
           )}
 
           {active === "patients" && <Patients />}
+          {active === "products" && <Products />}
           {active === "reports" && <Reports />}
           {active === "settings" && <SettingsData />}
         </section>
