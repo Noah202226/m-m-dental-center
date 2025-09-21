@@ -1,17 +1,17 @@
+// ServicesData.jsx
 "use client";
-import { useEffect, useState, useCallback } from "react";
-import { databases, DATABASE_ID, ID } from "../../../lib/appwrite";
 
-const SERVICES_COLLECTION_ID = "services";
-const SUB_SERVICES_COLLECTION_ID = "subServices";
+import { useEffect, useState } from "react";
+import { useSettingsStore } from "../../../stores/useSettingStore"; // adjust path if needed
 
+/* ---------- Confirm Modal ---------- */
 function ConfirmModal({ isOpen, title, message, onConfirm, onCancel }) {
   if (!isOpen) return null;
   return (
     <div className="modal modal-open">
       <div className="modal-box bg-black text-yellow-400">
         <h3 className="font-bold text-lg">{title}</h3>
-        <p className="py-4">{message}</p>
+        <p className="py-4 text-gray-300">{message}</p>
         <div className="modal-action">
           <button
             className="btn bg-gray-700 text-yellow-400"
@@ -28,28 +28,32 @@ function ConfirmModal({ isOpen, title, message, onConfirm, onCancel }) {
   );
 }
 
-function SubServiceItem({ serviceId, sub, editSubService, deleteSubService }) {
+/* ---------- SubService item (inline edit) ---------- */
+function SubServiceItem({ serviceId, sub, onEditSub, onDeleteSub }) {
   const [editing, setEditing] = useState(false);
-  const [editName, setEditName] = useState(sub.name);
+  const [name, setName] = useState(sub.name);
 
   return (
-    <li className="flex justify-between items-center">
-      {editing ? (
-        <input
-          type="text"
-          className="input input-sm input-bordered w-full max-w-xs"
-          value={editName}
-          onChange={(e) => setEditName(e.target.value)}
-        />
-      ) : (
-        <span>{sub.name}</span>
-      )}
+    <li className="flex justify-between items-center gap-3">
+      <div className="flex-1">
+        {editing ? (
+          <input
+            className="input input-sm input-bordered w-full"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
+        ) : (
+          <span className="text-gray-300">{sub.name}</span>
+        )}
+      </div>
+
       <div className="flex gap-2">
         {editing ? (
           <button
             className="btn btn-xs bg-yellow-400 text-black"
             onClick={() => {
-              editSubService(serviceId, sub.id, editName);
+              if (!name.trim()) return;
+              onEditSub?.(serviceId, sub.id, name);
               setEditing(false);
             }}
           >
@@ -58,14 +62,18 @@ function SubServiceItem({ serviceId, sub, editSubService, deleteSubService }) {
         ) : (
           <button
             className="btn btn-xs bg-gray-700 text-yellow-400"
-            onClick={() => setEditing(true)}
+            onClick={() => {
+              setName(sub.name);
+              setEditing(true);
+            }}
           >
             Edit
           </button>
         )}
+
         <button
           className="btn btn-xs bg-red-600 text-white"
-          onClick={() => deleteSubService(serviceId, sub.id)}
+          onClick={() => onDeleteSub?.(serviceId, sub.id)}
         >
           Delete
         </button>
@@ -74,6 +82,7 @@ function SubServiceItem({ serviceId, sub, editSubService, deleteSubService }) {
   );
 }
 
+/* ---------- Service item ---------- */
 function ServiceItem({
   service,
   isOpen,
@@ -90,23 +99,29 @@ function ServiceItem({
   const [subInput, setSubInput] = useState("");
 
   return (
-    <div className="border border-gray-700 rounded-lg p-3">
-      <div className="flex justify-between items-center">
-        {editingServiceId === service.id ? (
-          <input
-            type="text"
-            className="input input-sm input-bordered w-full max-w-xs"
-            value={editServiceName}
-            onChange={(e) => startEditService(service.id, e.target.value, true)}
-          />
-        ) : (
-          <span
-            className="font-bold text-2xl cursor-pointer text-yellow-400"
-            onClick={onToggle}
-          >
-            {service.name}
-          </span>
-        )}
+    <div className="border border-gray-700 rounded-lg p-3 bg-gray-900">
+      <h1>Services Name</h1>
+      <p className="text-xs italic">
+        Click the service name to view sub services
+      </p>
+      <div className="flex justify-between items-center gap-4">
+        <div className="flex-1">
+          {editingServiceId === service.id ? (
+            <input
+              className="input input-sm input-bordered w-full max-w-md"
+              value={editServiceName}
+              onChange={(e) => startEditService(service.id, e.target.value)}
+            />
+          ) : (
+            <button
+              className="text-left text-yellow-300 font-semibold text-lg hover:underline hover:cursor-pointer"
+              onClick={onToggle}
+            >
+              {service.name}
+            </button>
+          )}
+        </div>
+
         <div className="flex gap-2">
           {editingServiceId === service.id ? (
             <button
@@ -123,6 +138,7 @@ function ServiceItem({
               Edit
             </button>
           )}
+
           <button
             className="btn btn-xs bg-red-600 text-white"
             onClick={() => deleteService(service.id)}
@@ -135,18 +151,22 @@ function ServiceItem({
       {isOpen && (
         <div className="mt-3 space-y-3">
           <ul className="list-disc list-inside space-y-2">
-            {service.subServices.map((sub) => (
-              <SubServiceItem
-                key={sub.id}
-                serviceId={service.id}
-                sub={sub}
-                editSubService={editSubService}
-                deleteSubService={deleteSubService}
-              />
-            ))}
+            {service.subServices?.length ? (
+              service.subServices.map((sub) => (
+                <SubServiceItem
+                  key={sub.id}
+                  serviceId={service.id}
+                  sub={sub}
+                  onEditSub={editSubService}
+                  onDeleteSub={deleteSubService}
+                />
+              ))
+            ) : (
+              <li className="text-gray-500 italic">No sub-services yet.</li>
+            )}
           </ul>
 
-          <div className="join w-full">
+          <div className="join w-full mt-2">
             <input
               type="text"
               className="input input-bordered join-item w-full"
@@ -157,7 +177,8 @@ function ServiceItem({
             <button
               className="btn bg-yellow-400 text-black join-item"
               onClick={() => {
-                addSubService(service.id, subInput);
+                if (!subInput.trim()) return;
+                addSubService?.(service.id, subInput);
                 setSubInput("");
               }}
             >
@@ -170,184 +191,100 @@ function ServiceItem({
   );
 }
 
+/* ---------- Main ServicesData (uses settings store) ---------- */
 export default function ServicesData() {
-  const [services, setServices] = useState([]);
+  // store methods (may be async depending on your store implementation)
+  const {
+    services = [],
+    fetchServices,
+    addService,
+    updateService,
+    deleteService,
+    addSubService,
+    updateSubService,
+    deleteSubService,
+    loadingServices,
+  } = useSettingsStore();
+
   const [newServiceName, setNewServiceName] = useState("");
   const [editingServiceId, setEditingServiceId] = useState(null);
   const [editServiceName, setEditServiceName] = useState("");
   const [openServiceId, setOpenServiceId] = useState(null);
   const [toast, setToast] = useState("");
-  const [loading, setLoading] = useState(true);
-
   const [confirm, setConfirm] = useState({
     isOpen: false,
-    type: null,
+    type: null, // "service" | "sub"
     serviceId: null,
     subId: null,
   });
 
-  // 🔄 reusable fetch function
-  const fetchData = useCallback(async () => {
-    try {
-      const servicesRes = await databases.listDocuments(
-        DATABASE_ID,
-        SERVICES_COLLECTION_ID
-      );
-      const subRes = await databases.listDocuments(
-        DATABASE_ID,
-        SUB_SERVICES_COLLECTION_ID
-      );
-
-      const subByService = {};
-      subRes.documents.forEach((sub) => {
-        if (!subByService[sub.serviceId]) {
-          subByService[sub.serviceId] = [];
-        }
-        subByService[sub.serviceId].push({
-          id: sub.$id,
-          name: sub.subServiceName,
-        });
-      });
-
-      const combined = servicesRes.documents.map((s) => ({
-        id: s.$id,
-        name: s.serviceName,
-        subServices: subByService[s.$id] || [],
-      }));
-
-      setServices(combined);
-    } catch (error) {
-      console.error("Error fetching services:", error);
-      setToast("Failed to load services!");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
+  // initial fetch
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    if (typeof fetchServices === "function") fetchServices();
+    // otherwise, assume store is pre-populated
+  }, [fetchServices]);
 
-  // Toast auto-dismiss
+  // auto-dismiss toast
   useEffect(() => {
-    if (toast) {
-      const timer = setTimeout(() => setToast(null), 3000);
-      return () => clearTimeout(timer);
-    }
+    if (!toast) return;
+    const t = setTimeout(() => setToast(""), 3000);
+    return () => clearTimeout(t);
   }, [toast]);
 
-  // ---- SERVICES CRUD ----
-  const addService = async () => {
-    if (!newServiceName.trim()) return;
-    try {
-      await databases.createDocument(
-        DATABASE_ID,
-        SERVICES_COLLECTION_ID,
-        ID.unique(),
-        {
-          serviceName: newServiceName,
-        }
+  // handlers that use optional chaining (won't throw if store missing)
+  const handleAddService = async () => {
+    if (!newServiceName.trim()) return setToast("Type a service name");
+    await addService?.(newServiceName);
+    setNewServiceName("");
+    setToast("Service added");
+    if (typeof fetchServices === "function") fetchServices();
+  };
+
+  const handleSaveServiceEdit = async (id) => {
+    if (!editServiceName.trim()) return setToast("Service name required");
+    await updateService?.(id, editServiceName);
+    setEditingServiceId(null);
+    setEditServiceName("");
+    setToast("Service updated");
+    if (typeof fetchServices === "function") fetchServices();
+  };
+
+  const handleAddSub = async (serviceId, name) => {
+    if (!name || !name.trim()) return setToast("Sub-service is empty");
+    await addSubService?.(serviceId, name);
+    setToast("Sub-service added");
+    if (typeof fetchServices === "function") fetchServices();
+  };
+
+  const handleEditSub = async (serviceId, subId, newName) => {
+    if (!newName.trim()) return setToast("Sub-service name required");
+    // your store may accept (serviceId, subId, newName) or (subId, newName)
+    // try both
+    if (updateSubService) {
+      await updateSubService(subId, newName).catch(() =>
+        updateSubService(serviceId, subId, newName)
       );
-      setNewServiceName("");
-      setToast("Service added successfully!");
-      fetchData(); // 🔄 refresh
-    } catch (error) {
-      console.error("Add service error:", error);
-      setToast("Failed to add service!");
+    } else {
+      await updateSubService?.(serviceId, subId, newName);
     }
+    setToast("Sub-service updated");
+    if (typeof fetchServices === "function") fetchServices();
   };
 
-  const saveServiceEdit = async (id) => {
-    try {
-      await databases.updateDocument(DATABASE_ID, SERVICES_COLLECTION_ID, id, {
-        serviceName: editServiceName,
-      });
-      setToast("Service updated!");
-      fetchData(); // 🔄 refresh
-    } catch (error) {
-      console.error("Update service error:", error);
-      setToast("Failed to update service!");
-    } finally {
-      setEditingServiceId(null);
-      setEditServiceName("");
-    }
-  };
-
-  const deleteService = async (id) => {
-    try {
-      await databases.deleteDocument(DATABASE_ID, SERVICES_COLLECTION_ID, id);
-      setToast("Service deleted!");
-      fetchData(); // 🔄 refresh
-    } catch (error) {
-      console.error("Delete service error:", error);
-      setToast("Failed to delete service!");
-    }
-  };
-
-  // ---- SUB-SERVICES CRUD ----
-  const addSubService = async (serviceId, name) => {
-    if (!name.trim()) return;
-    try {
-      await databases.createDocument(
-        DATABASE_ID,
-        SUB_SERVICES_COLLECTION_ID,
-        ID.unique(),
-        {
-          serviceId,
-          subServiceName: name,
-        }
-      );
-      setToast("Sub-service added!");
-      fetchData(); // 🔄 refresh
-    } catch (error) {
-      console.error("Add sub-service error:", error);
-      setToast("Failed to add sub-service!");
-    }
-  };
-
-  const editSubService = async (serviceId, subId, newName) => {
-    try {
-      await databases.updateDocument(
-        DATABASE_ID,
-        SUB_SERVICES_COLLECTION_ID,
-        subId,
-        {
-          subServiceName: newName,
-        }
-      );
-      setToast("Sub-service updated!");
-      fetchData(); // 🔄 refresh
-    } catch (error) {
-      console.error("Update sub-service error:", error);
-      setToast("Failed to update sub-service!");
-    }
-  };
-
-  const deleteSubService = async (serviceId, subId) => {
-    try {
-      await databases.deleteDocument(
-        DATABASE_ID,
-        SUB_SERVICES_COLLECTION_ID,
-        subId
-      );
-      setToast("Sub-service deleted!");
-      fetchData(); // 🔄 refresh
-    } catch (error) {
-      console.error("Delete sub-service error:", error);
-      setToast("Failed to delete sub-service!");
-    }
-  };
-
-  const handleConfirm = () => {
+  const handleDeleteConfirmed = async () => {
     if (confirm.type === "service") {
-      deleteService(confirm.serviceId);
+      await deleteService?.(confirm.serviceId);
+      setToast("Service deleted");
     } else if (confirm.type === "sub") {
-      deleteSubService(confirm.serviceId, confirm.subId);
+      // store may accept just subId
+      await deleteSubService?.(confirm.subId ?? confirm.serviceId);
+      setToast("Sub-service deleted");
     }
     setConfirm({ isOpen: false, type: null, serviceId: null, subId: null });
+    if (typeof fetchServices === "function") fetchServices();
   };
 
-  if (loading) {
+  if (loadingServices) {
     return <p className="text-yellow-400">Loading services...</p>;
   }
 
@@ -355,7 +292,9 @@ export default function ServicesData() {
     <div className="card shadow-xl w-full max-w-7xl mx-auto mt-8 bg-black text-yellow-400">
       <div className="card-body">
         <h2 className="card-title">System Settings</h2>
-        <p>Manage services and their sub-services here.</p>
+        <p className="text-gray-300">
+          Manage services and their sub-services here.
+        </p>
 
         {/* Add Main Service */}
         <div className="join w-full mt-4">
@@ -367,7 +306,7 @@ export default function ServicesData() {
             onChange={(e) => setNewServiceName(e.target.value)}
           />
           <button
-            onClick={addService}
+            onClick={handleAddService}
             className="btn bg-yellow-400 text-black join-item"
           >
             Add
@@ -376,6 +315,10 @@ export default function ServicesData() {
 
         {/* Services List */}
         <div className="mt-6 space-y-3">
+          {services.length === 0 && (
+            <p className="italic text-gray-500">No services yet.</p>
+          )}
+
           {services.map((service) => (
             <ServiceItem
               key={service.id}
@@ -388,16 +331,21 @@ export default function ServicesData() {
               }
               editingServiceId={editingServiceId}
               editServiceName={editServiceName}
-              startEditService={(id, name, typing = false) => {
+              startEditService={(id, name) => {
                 setEditingServiceId(id);
                 setEditServiceName(name);
               }}
-              saveServiceEdit={saveServiceEdit}
+              saveServiceEdit={handleSaveServiceEdit}
               deleteService={(id) =>
-                setConfirm({ isOpen: true, type: "service", serviceId: id })
+                setConfirm({
+                  isOpen: true,
+                  type: "service",
+                  serviceId: id,
+                  subId: null,
+                })
               }
-              addSubService={addSubService}
-              editSubService={editSubService}
+              addSubService={handleAddSub}
+              editSubService={handleEditSub}
               deleteSubService={(serviceId, subId) =>
                 setConfirm({ isOpen: true, type: "sub", serviceId, subId })
               }
@@ -406,9 +354,9 @@ export default function ServicesData() {
         </div>
       </div>
 
-      {/* Toast */}
+      {/* toast */}
       {toast && (
-        <div className="fixed bottom-4 right-4 bg-yellow-400 text-black px-4 py-2 rounded shadow-md z-50 animate-fade-in">
+        <div className="fixed bottom-4 right-4 bg-yellow-400 text-black px-4 py-2 rounded shadow-md z-50">
           {toast}
         </div>
       )}
@@ -418,7 +366,7 @@ export default function ServicesData() {
         isOpen={confirm.isOpen}
         title="Delete Confirmation"
         message="Are you sure you want to delete this item?"
-        onConfirm={handleConfirm}
+        onConfirm={handleDeleteConfirmed}
         onCancel={() =>
           setConfirm({
             isOpen: false,

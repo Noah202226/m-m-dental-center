@@ -6,7 +6,7 @@ import toast from "react-hot-toast";
 
 export const useAuthStore = create((set) => ({
   current: null,
-  loading: true,
+  loading: true, // 🔹 start as true until check is done
 
   register: async (email, password) => {
     try {
@@ -47,10 +47,12 @@ export const useAuthStore = create((set) => ({
 
   getCurrentUser: async () => {
     try {
-      const user = await account.get();
+      const user = await account.get(); // 🔑 get Appwrite user session
       set({ current: user, loading: false });
-    } catch {
+    } catch (error) {
+      // ❗ Catch is IMPORTANT, Appwrite throws if no session
       set({ current: null, loading: false });
+      console.log("Auth check error:", error);
     }
   },
 }));

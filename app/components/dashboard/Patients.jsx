@@ -1,17 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { FiSearch, FiUser, FiTrash2 } from "react-icons/fi";
-
 import InstallmentsPanel from "./actions/InstallmentsPanel";
-
 import { usePatientStore } from "../../stores/usePatientStore";
 
 export default function PatientsLayout() {
-  // const [patients, setPatients] = useState([]);
-  // const [selectedPatient, setSelectedPatient] = useState(null);
   const [search, setSearch] = useState("");
-  // const [loading, setLoading] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const {
     patients,
@@ -29,6 +25,15 @@ export default function PatientsLayout() {
       .includes(search.toLowerCase())
   );
 
+  const handleSelect = (p) => {
+    setSelectedPatient(p);
+
+    // only open modal if on mobile
+    if (window.innerWidth < 768) {
+      setIsModalOpen(true);
+    }
+  };
+
   return (
     <div className="flex flex-col md:flex-row h-[calc(100vh-9rem)] bg-black text-gray-200">
       {/* Left: Patients List */}
@@ -45,7 +50,7 @@ export default function PatientsLayout() {
           </div>
         </div>
 
-        <div className="max-h-30 md:max-h-110 overflow-y-auto p-2 space-y-1">
+        <div className="max-h-full md:max-h-110 overflow-y-auto p-2 space-y-1">
           {loading ? (
             <p className="text-gray-500 text-sm">Loading patients...</p>
           ) : filteredPatients.length > 0 ? (
@@ -59,7 +64,7 @@ export default function PatientsLayout() {
                 }`}
               >
                 <button
-                  onClick={() => setSelectedPatient(p)}
+                  onClick={() => handleSelect(p)}
                   className="flex-1 text-left"
                 >
                   <h3 className="font-semibold">{p.patientName}</h3>
@@ -84,35 +89,91 @@ export default function PatientsLayout() {
         </div>
       </aside>
 
-      {/* Right: Patient Details */}
-      <main className="flex-1 p-6 overflow-y-auto">
+      {/* Right: Patient Details (Desktop only) */}
+      <main className="hidden md:block flex-1 p-6 overflow-y-auto">
         {selectedPatient ? (
-          <div className="space-y-4">
-            <div className="bg-gray-900 p-6 rounded-xl border border-gray-800 shadow-md">
-              <h2 className="text-2xl font-bold text-yellow-400 mb-3">
-                {selectedPatient.name}
-              </h2>
-              <p className="text-gray-300">
-                <span className="font-semibold">Age:</span>{" "}
-                {selectedPatient.age}
-              </p>
-              <p className="text-gray-300">
-                <span className="font-semibold">Service:</span>{" "}
-                {selectedPatient.serviceName}
-              </p>
-            </div>
-
-            <InstallmentsPanel
-              patient={selectedPatient}
-              fetchPatients={fetchPatients}
-            />
-          </div>
+          <PatientDetails
+            patient={selectedPatient}
+            fetchPatients={fetchPatients}
+          />
         ) : (
           <div className="h-full flex items-center justify-center text-gray-500">
             <FiUser className="mr-2" /> Select a patient to view details
           </div>
         )}
       </main>
+
+      {/* Mobile Modal */}
+      {isModalOpen && selectedPatient && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+          <div className="bg-gray-900 w-[90%] max-h-[90vh] overflow-y-auto rounded-xl p-6 shadow-xl border border-yellow-500/40">
+            <button
+              onClick={() => setIsModalOpen(false)}
+              className="absolute top-4 right-4 text-yellow-400 hover:text-yellow-600"
+            >
+              ✕
+            </button>
+            <PatientDetails
+              patient={selectedPatient}
+              fetchPatients={fetchPatients}
+            />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PatientDetails({ patient, fetchPatients }) {
+  return (
+    <div className="space-y-4">
+      <div className="hidden: md:block bg-black p-6 rounded-2xl border border-yellow-500/40 shadow-lg">
+        <h2 className="text-3xl font-extrabold text-yellow-400 mb-4">
+          {patient.patientName}
+        </h2>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <p className="text-gray-300">
+              <span className="font-semibold text-yellow-400">Age:</span>{" "}
+              {patient.patientAge}
+            </p>
+            <p className="text-gray-300">
+              <span className="font-semibold text-yellow-400">Gender:</span>{" "}
+              {patient.gender}
+            </p>
+            <p className="text-gray-300">
+              <span className="font-semibold text-yellow-400">Contact:</span>{" "}
+              {patient.contact}
+            </p>
+            <p className="text-gray-300">
+              <span className="font-semibold text-yellow-400">Address:</span>{" "}
+              {patient.address}
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <p className="text-gray-300">
+              <span className="font-semibold text-yellow-400">Price:</span> ₱
+              {patient.servicePrice}
+            </p>
+            <p className="text-gray-300">
+              <span className="font-semibold text-yellow-400">Service:</span>{" "}
+              {patient.serviceName}
+            </p>
+            <p className="text-gray-300">
+              <span className="font-semibold text-yellow-400">
+                Sub-service:
+              </span>{" "}
+              {patient.subServiceName}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-6">
+        <InstallmentsPanel patient={patient} fetchPatients={fetchPatients} />
+      </div>
     </div>
   );
 }

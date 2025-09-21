@@ -24,10 +24,13 @@ import { usePatientStore } from "../stores/usePatientStore";
 import { useAuthStore } from "../stores/authStore";
 
 import toast from "react-hot-toast";
+import { useRouter } from "next/navigation";
+import ExpenseModal from "./dashboard/actions/ExpenseModal";
+import DashboardData from "./dashboard/DashboardData";
 
 const menuItems = [
   { id: "dashboard", label: "Dashboard", icon: <Home size={20} /> },
-  { id: "appointments", label: "Appointments", icon: <Calendar size={20} /> },
+  // { id: "appointments", label: "Appointments", icon: <Calendar size={20} /> },
   { id: "patients", label: "Patients", icon: <Users size={20} /> },
   { id: "reports", label: "Reports", icon: <Stethoscope size={20} /> },
   { id: "settings", label: "Settings", icon: <Settings size={20} /> },
@@ -37,6 +40,12 @@ export default function DentalClinicLayout() {
   const [active, setActive] = useState("dashboard");
   const [dateTime, setDateTime] = useState(new Date());
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const [saving, setSaving] = useState(false);
+
+  // Expense Modal State
+  const [isOpen, setIsOpen] = useState(false);
+  const [editExpense, setEditExpense] = useState(null);
 
   // Logout function (replace with your auth logic)
   const { logout, current } = useAuthStore((state) => state);
@@ -59,6 +68,10 @@ export default function DentalClinicLayout() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (saving) return; // prevent double submit
+    setSaving(true);
+
     const formData = new FormData(e.currentTarget);
 
     const patientData = {
@@ -156,6 +169,9 @@ export default function DentalClinicLayout() {
       closeDialog();
     } catch (error) {
       console.error("Error saving patient:", error);
+      toast.error("Error", error);
+    } finally {
+      setSaving(false); // allow button again
     }
   };
 
@@ -174,6 +190,11 @@ export default function DentalClinicLayout() {
   w-64 bg-black border-r border-gray-800 flex flex-col z-20`}
       >
         <div className="p-6 border-b border-gray-800 flex items-center justify-between">
+          <img
+            src="/m&m-dental-center-logo.png"
+            alt="Clinic Logo"
+            className="top-4 left-4 w-24 opacity-80"
+          />
           <h1 className="text-2xl font-bold text-yellow-400">
             M&M Dental Center
           </h1>
@@ -183,6 +204,7 @@ export default function DentalClinicLayout() {
           >
             ✕
           </button>
+          {/* Fixed Logo in Corner */}
         </div>
 
         <nav className="flex-1 p-4 space-y-2">
@@ -249,14 +271,14 @@ export default function DentalClinicLayout() {
           <div className="flex items-center gap-4 sm:gap-6">
             {/* Stats hidden on xs screens */}
             <div className="hidden sm:flex gap-4">
-              <div className="text-center">
+              {/* <div className="text-center">
                 <p className="text-xs sm:text-sm text-gray-400">
                   Today’s Appointments
                 </p>
                 <p className="text-base sm:text-lg font-bold text-yellow-400">
                   12
                 </p>
-              </div>
+              </div> */}
               <div className="text-center">
                 <p className="text-xs sm:text-sm text-gray-400">
                   Total Patients
@@ -267,21 +289,32 @@ export default function DentalClinicLayout() {
               </div>
             </div>
 
+            <ExpenseModal
+              isOpen={isOpen}
+              onClose={() => {
+                setIsOpen(false);
+                setEditExpense(null);
+              }}
+              expense={editExpense}
+            />
             {/* Action Buttons (Desktop) */}
             <div className="hidden md:flex gap-2 z-10">
               <NewPatientModal openDialog={openDialog} />
               <button
-                onClick={() => console.log("New Expense")}
+                onClick={() => {
+                  console.log("New Expense");
+                  setIsOpen(true);
+                }}
                 className="px-3 py-1.5 rounded-md bg-gray-900 text-yellow-400 text-sm font-medium border border-gray-700 hover:bg-gray-800"
               >
                 + Expense
               </button>
-              <button
+              {/* <button
                 onClick={() => console.log("New Appointment")}
                 className="px-3 py-1.5 rounded-md bg-yellow-400 text-black text-sm font-medium hover:bg-yellow-500"
               >
                 + Appointment
-              </button>
+              </button> */}
             </div>
 
             {/* Mobile Dropdown Menu */}
@@ -308,20 +341,23 @@ export default function DentalClinicLayout() {
                 </li>
                 <li>
                   <button
-                    onClick={() => console.log("New Expense")}
+                    onClick={() => {
+                      console.log("New Expense");
+                      setIsOpen(true);
+                    }}
                     className="text-yellow-400 hover:bg-gray-800"
                   >
                     + Expense
                   </button>
                 </li>
-                <li>
+                {/* <li>
                   <button
                     onClick={() => console.log("New Appointment")}
                     className="text-yellow-400 hover:bg-gray-800"
                   >
                     + Appointment
                   </button>
-                </li>
+                </li> */}
               </ul>
             </div>
 
@@ -363,33 +399,7 @@ export default function DentalClinicLayout() {
 
         {/* Page Content */}
         <section className="p-4 sm:p-6">
-          {active === "dashboard" && (
-            <div>
-              <h3 className="text-lg font-bold mb-3 text-yellow-400">
-                Overview
-              </h3>
-              <div className="grid gap-4 md:grid-cols-3">
-                <div className="card bg-gray-900 shadow-md p-4 sm:p-6 rounded-xl">
-                  <p className="text-gray-400">Today’s Appointments</p>
-                  <h4 className="text-xl sm:text-2xl font-bold text-yellow-400">
-                    12
-                  </h4>
-                </div>
-                <div className="card bg-gray-900 shadow-md p-4 sm:p-6 rounded-xl">
-                  <p className="text-gray-400">New Patients</p>
-                  <h4 className="text-xl sm:text-2xl font-bold text-yellow-400">
-                    5
-                  </h4>
-                </div>
-                <div className="card bg-gray-900 shadow-md p-4 sm:p-6 rounded-xl">
-                  <p className="text-gray-400">Revenue</p>
-                  <h4 className="text-xl sm:text-2xl font-bold text-yellow-400">
-                    ₱25,000
-                  </h4>
-                </div>
-              </div>
-            </div>
-          )}
+          {active === "dashboard" && <DashboardData />}
 
           {active === "appointments" && (
             <div>
@@ -608,9 +618,23 @@ export default function DentalClinicLayout() {
                 </button>
                 <button
                   type="submit"
-                  className="btn bg-yellow-400 text-black hover:bg-yellow-500 rounded-lg"
+                  disabled={saving}
+                  className={`btn rounded-lg px-4 py-2 font-semibold transition 
+    ${
+      saving
+        ? "bg-gray-600 text-gray-300 cursor-not-allowed"
+        : "bg-yellow-400 text-black hover:bg-yellow-500"
+    }
+  `}
                 >
-                  Save
+                  {saving ? (
+                    <span className="flex items-center gap-2">
+                      <span className="loading loading-spinner loading-sm"></span>
+                      Saving...
+                    </span>
+                  ) : (
+                    "Save"
+                  )}
                 </button>
               </div>
             </form>
