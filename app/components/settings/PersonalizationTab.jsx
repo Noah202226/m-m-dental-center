@@ -49,7 +49,7 @@ export default function PersonalizationTab() {
         {/* Profile Initial */}
         <div>
           <label className="block text-gray-400 font-semibold mb-2">
-            Profile Initial
+            Profile Initial (maximum of 2 letter)
           </label>
           <input
             type="text"

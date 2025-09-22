@@ -324,47 +324,41 @@ export default function DentalClinicLayout() {
             </div>
 
             {/* Mobile Dropdown Menu */}
-            <div className="dropdown dropdown-end md:hidden z-50">
-              <label
-                tabIndex={0}
-                className="btn btn-sm bg-yellow-400 text-black hover:bg-yellow-500"
-              >
-                + New
-              </label>
-              <ul
-                tabIndex={0}
-                className="dropdown-content menu p-2 shadow bg-gray-900 border border-gray-700 rounded-lg w-44 z-50"
-              >
-                <li className="z-50">
-                  <button
-                    onClick={() =>
-                      document.getElementById("new_patient_modal").showModal()
-                    } // use state here
-                    className="text-yellow-400 hover:bg-gray-800"
-                  >
-                    + Patient
-                  </button>
-                </li>
-                <li>
-                  <button
-                    onClick={() => {
-                      console.log("New Expense");
-                      setIsOpen(true);
-                    }}
-                    className="text-yellow-400 hover:bg-gray-800"
-                  >
-                    + Expense
-                  </button>
-                </li>
-                {/* <li>
-                  <button
-                    onClick={() => console.log("New Appointment")}
-                    className="text-yellow-400 hover:bg-gray-800"
-                  >
-                    + Appointment
-                  </button>
-                </li> */}
-              </ul>
+            <div className="fixed bottom-6 right-6 md:hidden z-50">
+              <div className="dropdown dropdown-top dropdown-end">
+                <label
+                  tabIndex={0}
+                  className="btn btn-circle bg-yellow-400 text-black hover:bg-yellow-500 shadow-lg"
+                >
+                  +
+                </label>
+                <ul
+                  tabIndex={0}
+                  className="dropdown-content menu p-2 shadow bg-gray-900 border border-gray-700 rounded-lg w-44"
+                >
+                  <li>
+                    <button
+                      onClick={() =>
+                        document.getElementById("new_patient_modal").showModal()
+                      }
+                      className="text-yellow-400 hover:bg-gray-800"
+                    >
+                      + Patient
+                    </button>
+                  </li>
+                  <li>
+                    <button
+                      onClick={() => {
+                        console.log("New Expense");
+                        setIsOpen(true);
+                      }}
+                      className="text-yellow-400 hover:bg-gray-800"
+                    >
+                      + Expense
+                    </button>
+                  </li>
+                </ul>
+              </div>
             </div>
 
             {/* User Profile */}
@@ -385,9 +379,9 @@ export default function DentalClinicLayout() {
                 tabIndex={0}
                 className="dropdown-content menu p-2 shadow bg-black border border-yellow-500 rounded-box w-44"
               >
-                <li>
+                {/* <li>
                   <a>Profile</a>
-                </li>
+                </li> */}
                 <li>
                   <button
                     onClick={() => {
@@ -428,7 +422,7 @@ export default function DentalClinicLayout() {
       {/* Modal Overlay */}
       <dialog id="new_patient_modal" className="modal fixed inset-0 z-50">
         <div className="flex items-center justify-center w-full h-90vh bg-black/70 px-4">
-          <div className="w-full max-w-md sm:max-w-lg md:max-w-xl bg-gray-900 rounded-xl shadow-lg border border-gray-700 relative flex flex-col max-h-screen overflow-y-auto">
+          <div className="w-full max-w-md sm:max-w-lg md:max-w-xl text-black rounded-xl shadow-lg border border-yellow-400 relative flex flex-col max-h-screen overflow-y-auto">
             {/* Close Button */}
             <button
               className="btn btn-sm btn-circle absolute right-3 top-3 bg-gray-800 text-yellow-400 hover:bg-yellow-500"
