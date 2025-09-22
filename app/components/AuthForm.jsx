@@ -36,7 +36,7 @@ export default function AuthForm({ handleSubmit, submitType, onToggle }) {
               type="email"
               name="email"
               placeholder="Enter your email"
-              defaultValue={"noaligpitan@gmail.com"} // test only
+              // defaultValue={"noaligpitan@gmail.com"} // test only
               required
               className="grow text-base-content placeholder:text-base-content/60"
             />
@@ -54,7 +54,7 @@ export default function AuthForm({ handleSubmit, submitType, onToggle }) {
               type="password"
               name="password"
               placeholder="Enter your password"
-              defaultValue={"password123"} // test only
+              // defaultValue={"password123"} // test only
               required
               className="grow text-base-content placeholder:text-base-content/60"
             />
@@ -78,7 +78,7 @@ export default function AuthForm({ handleSubmit, submitType, onToggle }) {
         </button>
 
         {/* Toggle */}
-        {onToggle && (
+        {/* {onToggle && (
           <p className="text-center text-sm text-base-content">
             {submitType === "Sign Up" ? (
               <>
@@ -106,7 +106,7 @@ export default function AuthForm({ handleSubmit, submitType, onToggle }) {
               </>
             )}
           </p>
-        )}
+        )} */}
       </form>
     </div>
   );
