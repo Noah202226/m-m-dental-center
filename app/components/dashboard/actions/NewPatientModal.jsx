@@ -1,10 +1,6 @@
 "use client";
 
-import { useState } from "react";
-
 export default function NewPatientModal({ openDialog }) {
-  const [isOpen, setIsOpen] = useState(false);
-
   return (
     <>
       {/* Open Button */}

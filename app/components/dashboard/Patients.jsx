@@ -4,6 +4,7 @@ import { useState } from "react";
 import { FiSearch, FiUser, FiTrash2 } from "react-icons/fi";
 import InstallmentsPanel from "./actions/InstallmentsPanel";
 import { usePatientStore } from "../../stores/usePatientStore";
+import TransactionsPanel from "./actions/TransactionPanel";
 
 export default function PatientsLayout() {
   const [search, setSearch] = useState("");
@@ -90,7 +91,7 @@ export default function PatientsLayout() {
       </aside>
 
       {/* Right: Patient Details (Desktop only) */}
-      <main className="hidden md:block flex-1 p-6 overflow-y-auto">
+      <main className="hidden md:block flex-1 p-2 overflow-y-auto">
         {selectedPatient ? (
           <PatientDetails
             patient={selectedPatient}
@@ -123,16 +124,18 @@ export default function PatientsLayout() {
     </div>
   );
 }
-
 function PatientDetails({ patient, fetchPatients }) {
   return (
-    <div className="space-y-4">
-      <div className="hidden: md:block bg-black p-6 rounded-2xl border border-yellow-500/40 shadow-lg">
+    <div className="space-y-0">
+      {/* Patient Info + Installment Summary */}
+      <div className="bg-black p-3 rounded-2xl border border-yellow-500/40 shadow-lg">
         <h2 className="text-3xl font-extrabold text-yellow-400 mb-4">
           {patient.patientName}
         </h2>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Grid: 1 column on mobile, 2 columns on md+ */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+          {/* Left: Patient Info */}
           <div className="space-y-2">
             <p className="text-gray-300">
               <span className="font-semibold text-yellow-400">Age:</span>{" "}
@@ -150,13 +153,6 @@ function PatientDetails({ patient, fetchPatients }) {
               <span className="font-semibold text-yellow-400">Address:</span>{" "}
               {patient.address}
             </p>
-          </div>
-
-          <div className="space-y-2">
-            <p className="text-gray-300">
-              <span className="font-semibold text-yellow-400">Price:</span> ₱
-              {patient.servicePrice}
-            </p>
             <p className="text-gray-300">
               <span className="font-semibold text-yellow-400">Service:</span>{" "}
               {patient.serviceName}
@@ -165,15 +161,26 @@ function PatientDetails({ patient, fetchPatients }) {
               <span className="font-semibold text-yellow-400">
                 Sub-service:
               </span>{" "}
-              {patient.subServiceName}
+              {patient.subServiceName || "-"}
+            </p>
+            <p className="text-gray-300">
+              <span className="font-semibold text-yellow-400">Price:</span> ₱
+              {patient.servicePrice}
             </p>
           </div>
+
+          {/* Right: Installment Info */}
+          {patient.serviceType === "Installment" && (
+            <InstallmentsPanel
+              patient={patient}
+              fetchPatients={fetchPatients}
+            />
+          )}
         </div>
       </div>
 
-      <div className="mt-6">
-        <InstallmentsPanel patient={patient} fetchPatients={fetchPatients} />
-      </div>
+      {/* Transactions Section */}
+      <TransactionsPanel patient={patient} />
     </div>
   );
 }

@@ -1,6 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import AddPaymentModal from "./AddPaymentModal"; // import modal
 import ViewHistoryModal from "./ViewPaymentHistoryModal";
+import { FiEdit, FiPlusCircle, FiTrash2 } from "react-icons/fi";
+import { useTransactionStore } from "@/app/stores/useTransactionStore";
+
+import TransactionsPanel from "./TransactionPanel";
 
 export default function InstallmentsPanel({ patient, fetchPatients }) {
   const [showModal, setShowModal] = useState(false);

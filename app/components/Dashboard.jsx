@@ -92,7 +92,7 @@ export default function DentalClinicLayout() {
           .find((s) => s.id === selectedService)
           ?.subServices.find((sub) => sub.id === selectedSubService)?.name ||
         "",
-      serviceType: formData.get("service-type"), // One-time or Installment
+      serviceType: formData.get("service-type"),
       servicePrice:
         serviceType === "Installment"
           ? Number(formData.get("totalPrice"))
@@ -101,7 +101,7 @@ export default function DentalClinicLayout() {
         serviceType === "Installment"
           ? Number(formData.get("totalPrice")) -
             Number(formData.get("initialPayment"))
-          : 0, // initial balance is full price,
+          : 0,
     };
 
     try {
@@ -115,27 +115,13 @@ export default function DentalClinicLayout() {
 
       console.log("Patient saved:", newPatient);
 
-      // 2️⃣ If Installment → save initial installment record
+      // 2️⃣ Handle Transactions + Installments
       if (patientData.serviceType === "Installment") {
         const initialPayment = Number(formData.get("initialPayment")) || 0;
         const balanceAfter = patientData.servicePrice - initialPayment;
 
-        await databases.createDocument(
-          DATABASE_ID,
-          INSTALLMENTS_COLLECTION_ID,
-          ID.unique(),
-          {
-            patientId: newPatient.$id,
-            amountPaid: initialPayment,
-            paymentDate: new Date().toISOString(),
-            balanceAfter: balanceAfter,
-          }
-        );
-
-        console.log("Initial installment saved");
-
-        // 3️⃣ Save transaction for the initial payment
-        await databases.createDocument(
+        // 👉 Create transaction first
+        const transaction = await databases.createDocument(
           DATABASE_ID,
           "transactions",
           ID.unique(),
@@ -149,8 +135,24 @@ export default function DentalClinicLayout() {
             date: new Date().toISOString(),
           }
         );
+
+        // 👉 Create installment linked to this transaction
+        await databases.createDocument(
+          DATABASE_ID,
+          INSTALLMENTS_COLLECTION_ID,
+          ID.unique(),
+          {
+            patientId: newPatient.$id,
+            amountPaid: initialPayment,
+            balanceAfter,
+            paymentDate: new Date().toISOString(),
+            transactionId: transaction.$id, // ✅ link here
+          }
+        );
+
+        console.log("Initial installment linked to transaction ✅");
       } else {
-        // 4️⃣ If One-time → save full transaction
+        // One-time payment = just a transaction
         await databases.createDocument(
           DATABASE_ID,
           "transactions",
@@ -167,17 +169,18 @@ export default function DentalClinicLayout() {
         );
       }
 
-      e.target.reset();
+      // 3️⃣ UI updates
       toast.success("Patient added successfully!");
       fetchPatients();
       setSelectedService("");
       setSelectedSubService("");
       closeDialog();
+      e.target.reset();
     } catch (error) {
       console.error("Error saving patient:", error);
-      toast.error("Error", error);
+      toast.error("Error saving patient");
     } finally {
-      setSaving(false); // allow button again
+      setSaving(false);
     }
   };
 

@@ -151,6 +151,152 @@ export const usePatientStore = create(
           console.error("Error updating patient:", error);
         }
       },
+
+      transactions: [],
+      transactionsLoading: false,
+
+      // Fetch all transactions for a patient
+      fetchTransactions: async (patientId) => {
+        set({ transactionsLoading: true });
+        try {
+          const response = await databases.listDocuments(
+            DATABASE_ID,
+            TRANSACTIONS_COLLECTION_ID,
+            [Query.equal("patientId", patientId)]
+          );
+          set({ transactions: response.documents });
+        } catch (error) {
+          console.error("Error fetching transactions:", error);
+          toast.error("Failed to load transactions.");
+        } finally {
+          set({ transactionsLoading: false });
+        }
+      },
+
+      addTransaction: async (patientId, data) => {
+        try {
+          const newTxn = await databases.createDocument(
+            DATABASE_ID,
+            TRANSACTIONS_COLLECTION_ID,
+            ID.unique(),
+            {
+              ...data,
+              patientId,
+            }
+          );
+
+          // Refresh patient to get new balance
+          const updatedPatient = await databases.getDocument(
+            DATABASE_ID,
+            PATIENTS_COLLECTION_ID,
+            patientId
+          );
+
+          set((state) => ({
+            transactions: [...state.transactions, newTxn],
+            patients: state.patients.map((p) =>
+              p.$id === patientId ? updatedPatient : p
+            ),
+            selectedPatient:
+              state.selectedPatient?.$id === patientId
+                ? updatedPatient
+                : state.selectedPatient,
+          }));
+
+          toast.success("Transaction added!");
+          return newTxn;
+        } catch (error) {
+          console.error("Error adding transaction:", error);
+          toast.error("Failed to add transaction.");
+        }
+      },
+
+      deleteTransaction: async (transaction) => {
+        try {
+          // 1️⃣ Find related installment (using transactionId)
+          const installments = await databases.listDocuments(
+            DATABASE_ID,
+            INSTALLMENTS_COLLECTION_ID,
+            [Query.equal("transactionId", transaction.$id)]
+          );
+
+          // 2️⃣ Delete related installment if exists
+          if (installments.total > 0) {
+            await databases.deleteDocument(
+              DATABASE_ID,
+              INSTALLMENTS_COLLECTION_ID,
+              installments.documents[0].$id
+            );
+          }
+
+          // 3️⃣ Delete transaction itself
+          await databases.deleteDocument(
+            DATABASE_ID,
+            TRANSACTIONS_COLLECTION_ID,
+            transaction.$id
+          );
+
+          // 4️⃣ Update patient balance (add back deleted amount)
+          const patient = await databases.getDocument(
+            DATABASE_ID,
+            PATIENTS_COLLECTION_ID,
+            transaction.patientId
+          );
+
+          const newBalance =
+            (patient.balance || 0) + Number(transaction.amount);
+
+          const updatedPatient = await databases.updateDocument(
+            DATABASE_ID,
+            PATIENTS_COLLECTION_ID,
+            transaction.patientId,
+            { balance: newBalance }
+          );
+
+          // 5️⃣ Update state (transactions & patients & selectedPatient)
+          set((state) => ({
+            transactions: state.transactions.filter(
+              (t) => t.$id !== transaction.$id
+            ),
+            patients: state.patients.map((p) =>
+              p.$id === transaction.patientId ? updatedPatient : p
+            ),
+            selectedPatient:
+              state.selectedPatient?.$id === transaction.patientId
+                ? updatedPatient
+                : state.selectedPatient,
+          }));
+
+          toast.success(
+            "Transaction & installment deleted, balance updated ✅"
+          );
+        } catch (error) {
+          console.error("Error deleting transaction:", error);
+          toast.error("Failed to delete transaction");
+        }
+      },
+
+      // Optional: Update transaction
+      updateTransaction: async (txnId, updates) => {
+        try {
+          const updated = await databases.updateDocument(
+            DATABASE_ID,
+            TRANSACTIONS_COLLECTION_ID,
+            txnId,
+            updates
+          );
+          set((state) => ({
+            transactions: state.transactions.map((t) =>
+              t.$id === txnId ? updated : t
+            ),
+          }));
+          toast.success("Transaction updated!");
+          return updated;
+        } catch (error) {
+          console.error("Error updating transaction:", error);
+          toast.error("Failed to update transaction.");
+        }
+      },
     }),
     {
       name: "patient-storage", // localStorage key

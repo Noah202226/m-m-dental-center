@@ -1,12 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { databases, ID, DATABASE_ID } from "../../../lib/appwrite"; // adjust import path
 import toast from "react-hot-toast";
+import { useTransactionStore } from "@/app/stores/useTransactionStore";
 
 export default function AddPaymentModal({ patient, onClose, fetchPatients }) {
   const [amount, setAmount] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const { transactions, fetchTransactions } = useTransactionStore();
+
+  console.log(transactions);
+
+  useEffect(() => {
+    fetchTransactions();
+  }, [fetchTransactions]);
 
   const handleAddPayment = async (e) => {
     e.preventDefault();
@@ -15,22 +24,10 @@ export default function AddPaymentModal({ patient, onClose, fetchPatients }) {
     try {
       setLoading(true);
 
-      const newBalance = (patient.balance || 0) - Number(amount);
-      // 1️⃣ Create new installment record
-      await databases.createDocument(DATABASE_ID, "installments", ID.unique(), {
-        patientId: patient.$id,
-        amountPaid: Number(amount),
-        paymentDate: new Date().toISOString(),
-        balanceAfter: newBalance,
-      });
+      const paymentAmount = Number(amount);
+      const newBalance = (patient.balance || 0) - paymentAmount;
 
-      // 2️⃣ Update patient balance
-
-      await databases.updateDocument(DATABASE_ID, "patients", patient.$id, {
-        balance: newBalance,
-      });
-
-      // 3️⃣ Save in Transactions
+      // 1️⃣ Create transaction first
       const transaction = await databases.createDocument(
         DATABASE_ID,
         "transactions",
@@ -40,15 +37,30 @@ export default function AddPaymentModal({ patient, onClose, fetchPatients }) {
           patientName: patient.patientName,
           serviceName: patient.serviceName,
           subServiceName: patient.subServiceName ?? "",
-          amount: Number(amount),
-          paymentType: patient.serviceType,
+          amount: paymentAmount,
+          paymentType: "Installment",
           date: new Date().toISOString(),
         }
       );
 
+      // 2️⃣ Create installment linked with transactionId
+      await databases.createDocument(DATABASE_ID, "installments", ID.unique(), {
+        patientId: patient.$id,
+        amountPaid: paymentAmount,
+        paymentDate: new Date().toISOString(),
+        balanceAfter: newBalance,
+        transactionId: transaction.$id, // ✅ link
+      });
+
+      // 3️⃣ Update patient balance
+      await databases.updateDocument(DATABASE_ID, "patients", patient.$id, {
+        balance: newBalance,
+      });
+
       toast.success("Payment added successfully!");
       onClose();
-      fetchPatients();
+      await fetchPatients();
+      await fetchTransactions();
     } catch (err) {
       console.error("Error adding payment:", err);
       alert("Failed to add payment. Please try again.");
@@ -61,7 +73,7 @@ export default function AddPaymentModal({ patient, onClose, fetchPatients }) {
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
       <div className="bg-gray-900 p-6 rounded-xl border border-gray-700 w-96">
         <h2 className="text-xl font-bold text-yellow-400 mb-4">
-          Add Payment for {patient.name}
+          Add Payment for {patient.patientName}
         </h2>
 
         <form onSubmit={handleAddPayment} className="space-y-4">
