@@ -173,25 +173,47 @@ export const usePatientStore = create(
         }
       },
 
+      // Inside usePatientStore
       addTransaction: async (patientId, data) => {
         try {
+          // 1️⃣ Create transaction
           const newTxn = await databases.createDocument(
             DATABASE_ID,
             TRANSACTIONS_COLLECTION_ID,
             ID.unique(),
-            {
-              ...data,
-              patientId,
-            }
+            { ...data, patientId }
           );
 
-          // Refresh patient to get new balance
-          const updatedPatient = await databases.getDocument(
+          // 2️⃣ Update patient balance
+          const patient = await databases.getDocument(
             DATABASE_ID,
             PATIENTS_COLLECTION_ID,
             patientId
           );
+          const newBalance = (patient.balance || 0) - Number(data.amount);
 
+          const updatedPatient = await databases.updateDocument(
+            DATABASE_ID,
+            PATIENTS_COLLECTION_ID,
+            patientId,
+            { balance: newBalance }
+          );
+
+          // 3️⃣ Create installment linked to transaction
+          await databases.createDocument(
+            DATABASE_ID,
+            INSTALLMENTS_COLLECTION_ID,
+            ID.unique(),
+            {
+              patientId,
+              amountPaid: data.amount,
+              paymentDate: new Date().toISOString(),
+              balanceAfter: newBalance,
+              transactionId: newTxn.$id,
+            }
+          );
+
+          // 4️⃣ Update state
           set((state) => ({
             transactions: [...state.transactions, newTxn],
             patients: state.patients.map((p) =>
@@ -203,11 +225,11 @@ export const usePatientStore = create(
                 : state.selectedPatient,
           }));
 
-          toast.success("Transaction added!");
+          toast.success("Payment added (transaction + installment) ✅");
           return newTxn;
         } catch (error) {
           console.error("Error adding transaction:", error);
-          toast.error("Failed to add transaction.");
+          toast.error("Failed to add payment.");
         }
       },
 

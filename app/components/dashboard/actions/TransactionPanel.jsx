@@ -42,6 +42,8 @@ export default function TransactionsPanel({ patient }) {
     });
     setAmount("");
     setNotes("");
+    setSelectedService(null);
+    setSelectedSubService(null);
     // Close modal after save
     document.getElementById("txn_modal").close();
   };
