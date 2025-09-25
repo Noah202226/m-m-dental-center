@@ -21,7 +21,8 @@ export const useTransactionStore = create(
           const res = await databases.listDocuments(
             DATABASE_ID,
             TRANSACTIONS_COLLECTION_ID,
-            []
+
+            [Query.limit(1000)]
           );
           set({ transactions: res.documents });
         } catch (error) {

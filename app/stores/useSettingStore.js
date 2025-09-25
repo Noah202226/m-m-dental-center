@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { databases, DATABASE_ID, ID } from "../lib/appwrite";
+import { Query } from "appwrite";
 
 const SERVICES_COLLECTION_ID = "services";
 const SUB_SERVICES_COLLECTION_ID = "subServices";
@@ -20,11 +21,13 @@ export const useSettingsStore = create(
         try {
           const servicesRes = await databases.listDocuments(
             DATABASE_ID,
-            SERVICES_COLLECTION_ID
+            SERVICES_COLLECTION_ID,
+            [Query.limit(1000)]
           );
           const subRes = await databases.listDocuments(
             DATABASE_ID,
-            SUB_SERVICES_COLLECTION_ID
+            SUB_SERVICES_COLLECTION_ID,
+            [Query.limit(1000)]
           );
 
           const subByService = {};

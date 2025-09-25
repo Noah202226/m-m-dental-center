@@ -70,7 +70,7 @@ export const useExpensesStore = create(
           const res = await databases.listDocuments(
             DATABASE_ID,
             COLLECTION_ID,
-            [Query.orderDesc("$createdAt")]
+            [Query.orderDesc("$createdAt"), Query.limit(1000)]
           );
           set({
             expenses: res.documents,

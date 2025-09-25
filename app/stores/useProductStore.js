@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { databases, ID, DATABASE_ID } from "../lib/appwrite";
+import { Query } from "appwrite";
 
 const collectionId = "products"; // replace with your Collection id
 
@@ -12,7 +13,9 @@ export const useProductStore = create(
       // Fetch products from Appwrite
       fetchProducts: async () => {
         try {
-          const res = await databases.listDocuments(DATABASE_ID, collectionId);
+          const res = await databases.listDocuments(DATABASE_ID, collectionId, [
+            Query.limit(1000),
+          ]);
           set({ products: res.documents });
         } catch (err) {
           console.error("❌ Fetch products error:", err);

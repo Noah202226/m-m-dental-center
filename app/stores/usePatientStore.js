@@ -38,7 +38,8 @@ export const usePatientStore = create(
         try {
           const response = await databases.listDocuments(
             DATABASE_ID,
-            PATIENTS_COLLECTION_ID
+            PATIENTS_COLLECTION_ID,
+            [Query.limit(1000)]
           );
           set({ patients: response.documents });
           if (response.documents.length > 0) {
@@ -162,7 +163,7 @@ export const usePatientStore = create(
           const response = await databases.listDocuments(
             DATABASE_ID,
             TRANSACTIONS_COLLECTION_ID,
-            [Query.equal("patientId", patientId)]
+            [Query.equal("patientId", patientId), Query.limit(1000)]
           );
           set({ transactions: response.documents });
         } catch (error) {
