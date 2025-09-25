@@ -49,8 +49,8 @@ export default function TransactionsPanel({ patient }) {
   };
 
   return (
-    <div className="bg-black p-6 rounded-2xl border border-yellow-500/40 shadow-lg flex-1 overflow-y-auto mt-3 space-y-3 pr-2">
-      <div className="flex items-center justify-between">
+    <div className="bg-black p-6 rounded-2xl border border-yellow-500/40 shadow-lg flex-1  h-full overflow-y-auto mt-3 space-y-3 pr-2">
+      <div className="flex items-center justify-between h-full overflow-y-auto">
         <h3 className="text-2xl font-bold text-yellow-400">Transactions</h3>
 
         {/* DaisyUI Modal Trigger */}

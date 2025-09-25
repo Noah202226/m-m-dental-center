@@ -125,7 +125,7 @@ export default function SalesDashboard() {
   }, [fetchTransactions]);
 
   return (
-    <div className="flex flex-col h-full overflow-hidden text-yellow-400">
+    <div className="flex flex-1 flex-col h-full overflow-hidden text-yellow-400">
       {/* 🔹 Fixed Header (totals + filter) */}
       <div className="shrink-0 bg-black pb-2 z-5">
         <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
@@ -191,9 +191,9 @@ export default function SalesDashboard() {
       </div>
 
       {/* 🔹 Scrollable content */}
-      <div className="flex-1 min-h-0 overflow-y-auto">
+      <div className="flex-1 min-h-full overflow-y-auto">
         {/* Desktop Table */}
-        <div className="hidden md:block  h-40 overflow-x-auto rounded-box border border-base-content/5">
+        <div className="hidden md:block  h-100 overflow-x-auto rounded-box border border-base-content/5">
           <table className="table overflow-auto text-yellow-400">
             <thead>
               <tr className="bg-yellow-500 text-black sticky top-0">

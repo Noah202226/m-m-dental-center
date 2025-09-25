@@ -17,7 +17,7 @@ export default function ReportsTabs() {
   ];
 
   return (
-    <div className="w-full">
+    <div className="w-full h-full">
       {/* Header */}
       {/* <div className="flex justify-between items-center mb-4">
         <h2 className="text-2xl font-bold text-yellow-400">Reports</h2>
@@ -54,10 +54,10 @@ export default function ReportsTabs() {
       </div>
 
       {/* Tab Content */}
-      <div className=" flex-col mt-6 border p-2 border-yellow-400 rounded-lg bg-black text-yellow-400">
+      <div className=" flex-col mt-6 border p-2 border-yellow-400 rounded-lg bg-black text-yellow-400 h-full">
         {/* 🔹 Transactions Report */}
         {activeTab === "transactions" && (
-          <div className="flex-1 overflow-hidden">
+          <div className="flex-1 overflow-hidden h-full">
             <SalesDashboard />
           </div>
         )}

@@ -228,7 +228,7 @@ export default function DentalClinicLayout() {
                 ${
                   active === item.id
                     ? "bg-yellow-400 text-black font-semibold"
-                    : "text-gray-300 hover:bg-gray-900 hover:text-yellow-400"
+                    : "text-gray-300 hover:bg-gray-900 hover:text-yellow-400 hover:cursor-pointer"
                 }
               `}
             >
