@@ -151,7 +151,7 @@ export default function TransactionsPanel({ patient }) {
       {transactionsLoading ? (
         <p className="text-gray-500 text-sm">Loading...</p>
       ) : transactions.length > 0 ? (
-        <div className="space-y-2">
+        <div className="max-h-full md:max-h-full overflow-y-auto p-2 space-y-1">
           {transactions.map((txn) => (
             <div
               key={txn.$id}

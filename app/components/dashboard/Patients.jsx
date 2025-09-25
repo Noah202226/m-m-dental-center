@@ -51,7 +51,7 @@ export default function PatientsLayout() {
           </div>
         </div>
 
-        <div className="max-h-full md:max-h-110 overflow-y-auto p-2 space-y-1">
+        <div className="max-h-full md:max-h-full overflow-y-auto p-2 space-y-1">
           {loading ? (
             <p className="text-gray-500 text-sm">Loading patients...</p>
           ) : filteredPatients.length > 0 ? (
