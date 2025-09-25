@@ -159,7 +159,14 @@ export default function TransactionsPanel({ patient }) {
             >
               <div>
                 <p className="text-yellow-400 font-semibold">₱{txn.amount}</p>
-                <p className="text-sm text-gray-400">{txn.date}</p>
+                <p className="text-sm text-gray-400">
+                  {" "}
+                  {new Date(txn.date).toLocaleDateString("en-US", {
+                    year: "numeric",
+                    month: "short",
+                    day: "numeric",
+                  })}
+                </p>
                 {txn.notes && (
                   <p className="text-sm text-gray-300 italic">{txn.notes}</p>
                 )}
