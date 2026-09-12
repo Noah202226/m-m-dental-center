@@ -77,8 +77,8 @@ export default function AuthForm({ handleSubmit, submitType, onToggle }) {
           )}
         </button>
 
-        {/* Toggle */}
-        {/* {onToggle && (
+        {/* Toggle between Login and Sign Up */}
+        {onToggle && (
           <p className="text-center text-sm text-base-content">
             {submitType === "Sign Up" ? (
               <>
@@ -86,7 +86,7 @@ export default function AuthForm({ handleSubmit, submitType, onToggle }) {
                 <button
                   type="button"
                   onClick={onToggle}
-                  className="link link-primary"
+                  className="link link-primary font-semibold text-yellow-400 hover:underline ml-1"
                   disabled={loading}
                 >
                   Log In
@@ -98,7 +98,7 @@ export default function AuthForm({ handleSubmit, submitType, onToggle }) {
                 <button
                   type="button"
                   onClick={onToggle}
-                  className="link link-primary"
+                  className="link link-primary font-semibold text-yellow-400 hover:underline ml-1"
                   disabled={loading}
                 >
                   Sign Up
@@ -106,7 +106,7 @@ export default function AuthForm({ handleSubmit, submitType, onToggle }) {
               </>
             )}
           </p>
-        )} */}
+        )}
       </form>
     </div>
   );
