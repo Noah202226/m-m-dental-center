@@ -2,8 +2,32 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useTransactionStore } from "../../stores/useTransactionStore";
-import { FiDollarSign, FiFilter } from "react-icons/fi";
-import { FaPesoSign } from "react-icons/fa6";
+import { toast } from "sonner";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+} from "../ui/Card";
+import { Button } from "../ui/Button";
+import { Input } from "../ui/Input";
+import { Badge } from "../ui/Badge";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableHead,
+  TableRow,
+  TableCell,
+} from "../ui/Table";
+import {
+  TrendingUp,
+  Filter,
+  FileDown,
+  Calendar,
+  CreditCard,
+  CheckCircle2,
+} from "lucide-react";
 
 // PDF
 import { jsPDF } from "jspdf";
@@ -39,62 +63,84 @@ export default function SalesDashboard() {
 
     updateMonthRange();
 
-    // ✅ Auto-refresh when month changes (check every hour)
     const interval = setInterval(() => {
       updateMonthRange();
-    }, 1000 * 60 * 60); // 1 hour
+    }, 1000 * 60 * 60);
 
     return () => clearInterval(interval);
   }, [filterByDate]);
 
+  useEffect(() => {
+    fetchTransactions();
+  }, [fetchTransactions]);
+
   // PDF Report
   const generateReport = () => {
-    const doc = new jsPDF();
+    try {
+      const doc = new jsPDF();
 
-    // Title
-    doc.setFontSize(16);
-    doc.setFont("Roboto-font");
-    doc.text("Sales Report", 14, 20);
+      // Title
+      doc.setFontSize(16);
+      doc.setFont("Roboto-font");
+      doc.text("Sales & Revenue Report", 14, 20);
 
-    // Date range
-    if (startDate && endDate) {
-      doc.setFontSize(11);
-      doc.text(`From: ${startDate} To: ${endDate}`, 14, 28);
+      // Date range
+      if (startDate && endDate) {
+        doc.setFontSize(11);
+        doc.text(`Period: ${startDate} to ${endDate}`, 14, 28);
+      }
+
+      // Build table rows
+      const rows = transactions.map((t) => [
+        new Date(t.date).toLocaleString("en-US", {
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+        t.patientName || "N/A",
+        t.serviceName || "Treatment",
+        t.paymentType || "Cash",
+        `PHP ${Number(t.amount || 0).toLocaleString()}`,
+      ]);
+
+      autoTable(doc, {
+        startY: 35,
+        head: [["Date", "Patient", "Service", "Type", "Amount"]],
+        body: rows,
+        styles: { font: "helvetica" },
+      });
+
+      // Totals
+      const totalAmount = transactions.reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
+      doc.setFontSize(12);
+      doc.text(
+        `Total Generated: PHP ${totalAmount.toLocaleString()}`,
+        14,
+        doc.lastAutoTable.finalY + 10
+      );
+
+      // Save PDF
+      doc.save(`sales_report_${startDate}_to_${endDate}.pdf`);
+      toast.success("Sales report PDF exported! 📄", {
+        description: `Exported ${transactions.length} transactions (${startDate} to ${endDate})`,
+      });
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to generate PDF report");
     }
+  };
 
-    // Build table rows
-    const rows = transactions.map((t) => [
-      new Date(t.date).toLocaleString("en-US", {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-      t.patientName,
-      t.serviceName,
-      t.paymentType,
-      `PHP ${t.amount.toLocaleString()}`,
-    ]);
-
-    autoTable(doc, {
-      startY: 35,
-      head: [["Date", "Patient", "Service", "Type", "Amount"]],
-      body: rows,
-      styles: { font: "helvetica" },
+  const handleApplyFilter = () => {
+    if (!startDate || !endDate) {
+      toast.error("Please select both start and end dates");
+      return;
+    }
+    filterByDate(startDate, endDate);
+    toast.info("Filtered sales for selected period 📅", {
+      description: `${startDate} to ${endDate}`,
     });
-
-    // Totals
-    const totalAmount = transactions.reduce((sum, t) => sum + t.amount, 0);
-    doc.setFontSize(12);
-    doc.text(
-      `Total: PHP ${totalAmount.toLocaleString()}`,
-      14,
-      doc.lastAutoTable.finalY + 10
-    );
-
-    // Save PDF
-    doc.save("sales_report.pdf");
   };
 
   // Totals calculation
@@ -108,106 +154,136 @@ export default function SalesDashboard() {
 
     transactions.forEach((t) => {
       const d = new Date(t.date);
-      if (t.date.startsWith(today)) todayTotal += t.amount;
+      const amt = Number(t.amount) || 0;
+      if (t.date?.startsWith(today)) todayTotal += amt;
       if (
         d.getMonth() === now.getMonth() &&
         d.getFullYear() === now.getFullYear()
       )
-        monthTotal += t.amount;
-      if (d.getFullYear() === now.getFullYear()) yearTotal += t.amount;
+        monthTotal += amt;
+      if (d.getFullYear() === now.getFullYear()) yearTotal += amt;
     });
 
     return { today: todayTotal, month: monthTotal, year: yearTotal };
   }, [transactions]);
 
-  useEffect(() => {
-    fetchTransactions();
-  }, [fetchTransactions]);
-
   return (
-    <div className="flex flex-1 flex-col h-full overflow-hidden text-yellow-400">
+    <div className="flex flex-1 flex-col h-full space-y-4">
       {/* 🔹 Fixed Header (totals + filter) */}
-      <div className="shrink-0 bg-black pb-2 z-5">
-        <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-          <FaPesoSign /> Sales Dashboard
-        </h2>
+      <div className="space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-bold text-[hsl(var(--foreground))] flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-amber-500" />
+              Sales & Collection Breakdown
+            </h2>
+            <p className="text-xs text-[hsl(var(--muted-foreground))]">
+              Real-time revenue metrics, collection audit, and exportable ledger
+            </p>
+          </div>
 
-        {/* Totals */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-          <div className="card bg-black border border-yellow-500/40 shadow-lg rounded-2xl p-4 text-yellow-400">
-            <h3 className="text-sm font-medium text-gray-400">Today</h3>
-            <p className="text-2xl md:text-3xl font-extrabold text-yellow-400">
-              ₱{totals.today.toLocaleString()}
-            </p>
-          </div>
-          <div className="card bg-black border border-yellow-500/40 shadow-lg rounded-2xl p-4 text-yellow-400">
-            <h3 className="text-sm font-medium text-gray-400">This Month</h3>
-            <p className="text-2xl md:text-3xl font-extrabold text-yellow-400">
-              ₱{totals.month.toLocaleString()}
-            </p>
-          </div>
-          <div className="card bg-black border border-yellow-500/40 shadow-lg rounded-2xl p-4 text-yellow-400">
-            <h3 className="text-sm font-medium text-gray-400">This Year</h3>
-            <p className="text-2xl md:text-3xl font-extrabold text-yellow-400">
-              ₱{totals.year.toLocaleString()}
-            </p>
-          </div>
+          <Button
+            onClick={generateReport}
+            className="gap-2 shrink-0 self-start sm:self-auto shadow-sm"
+          >
+            <FileDown size={15} />
+            <span>Export Sales PDF</span>
+          </Button>
         </div>
 
-        {/* Date Range Filter */}
-        <div className="flex flex-col md:flex-row gap-3 items-center mb-3">
-          <input
+        {/* Totals Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <Card className="p-4 border-[hsl(var(--border))] bg-[hsl(var(--card))]">
+            <span className="text-[11px] font-medium text-[hsl(var(--muted-foreground))] block">
+              Today's Collections
+            </span>
+            <p className="text-2xl font-bold text-amber-500 mt-1">
+              ₱{totals.today.toLocaleString()}
+            </p>
+          </Card>
+
+          <Card className="p-4 border-[hsl(var(--border))] bg-[hsl(var(--card))]">
+            <span className="text-[11px] font-medium text-[hsl(var(--muted-foreground))] block">
+              This Month's Revenue
+            </span>
+            <p className="text-2xl font-bold text-emerald-500 mt-1">
+              ₱{totals.month.toLocaleString()}
+            </p>
+          </Card>
+
+          <Card className="p-4 border-[hsl(var(--border))] bg-[hsl(var(--card))]">
+            <span className="text-[11px] font-medium text-[hsl(var(--muted-foreground))] block">
+              Year to Date
+            </span>
+            <p className="text-2xl font-bold text-[hsl(var(--foreground))] mt-1">
+              ₱{totals.year.toLocaleString()}
+            </p>
+          </Card>
+        </div>
+
+        {/* Date Range Filter Bar */}
+        <div className="flex flex-wrap items-center gap-2 p-3 rounded-xl bg-[hsl(var(--muted))]/40 border border-[hsl(var(--border))]">
+          <span className="text-xs font-semibold text-[hsl(var(--foreground))] flex items-center gap-1.5 mr-1">
+            <Calendar size={14} className="text-amber-500" />
+            <span>Range:</span>
+          </span>
+
+          <Input
             type="date"
             value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
-            className="input input-sm bg-black border border-yellow-400 text-yellow-400 rounded-lg"
+            className="w-36 h-8 text-xs"
           />
-          <span className="text-gray-400">to</span>
-          <input
+          <span className="text-xs text-[hsl(var(--muted-foreground))]">to</span>
+          <Input
             type="date"
             value={endDate}
             onChange={(e) => setEndDate(e.target.value)}
-            className="input input-sm bg-black border border-yellow-400 text-yellow-400 rounded-lg"
+            className="w-36 h-8 text-xs"
           />
-          <button
-            onClick={() => filterByDate(startDate, endDate)}
-            className="btn btn-sm bg-yellow-400 text-black hover:bg-yellow-500 flex items-center gap-2"
+
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={handleApplyFilter}
+            className="h-8 gap-1.5 text-xs ml-auto"
           >
-            <FiFilter /> Filter
-          </button>
-          <button
-            onClick={generateReport}
-            className="btn btn-sm bg-yellow-400 text-black"
-          >
-            Generate Sales Report
-          </button>
+            <Filter size={13} />
+            <span>Apply Filter</span>
+          </Button>
         </div>
 
         {filteredTotal > 0 && (
-          <p className="mb-3 text-green-400 font-bold">
-            Total in Range: ₱{filteredTotal.toLocaleString()}
-          </p>
+          <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-600 dark:text-emerald-400 font-semibold">
+            <CheckCircle2 size={14} />
+            <span>Filtered Total for Period: ₱{filteredTotal.toLocaleString()}</span>
+          </div>
         )}
       </div>
 
-      {/* 🔹 Scrollable content */}
-      <div className="flex-1 min-h-full overflow-y-auto">
-        {/* Desktop Table */}
-        <div className="hidden md:block  h-100 overflow-x-auto rounded-box border border-base-content/5">
-          <table className="table overflow-auto text-yellow-400">
-            <thead>
-              <tr className="bg-yellow-500 text-black sticky top-0">
-                <th>Date</th>
-                <th>Patient</th>
-                <th>Service</th>
-                <th>Type</th>
-                <th>Amount</th>
-              </tr>
-            </thead>
-            <tbody>
-              {transactions.map((t) => (
-                <tr key={t.$id}>
-                  <td>
+      {/* 🔹 Scrollable Table */}
+      <div className="flex-1 overflow-x-auto border border-[hsl(var(--border))] rounded-xl bg-[hsl(var(--card))]">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Date & Time</TableHead>
+              <TableHead>Patient</TableHead>
+              <TableHead>Service / Procedure</TableHead>
+              <TableHead>Payment Mode</TableHead>
+              <TableHead className="text-right">Amount</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {transactions.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center py-10 text-xs text-[hsl(var(--muted-foreground))]">
+                  No sales transactions logged for this selected timeframe.
+                </TableCell>
+              </TableRow>
+            ) : (
+              transactions.map((t) => (
+                <TableRow key={t.$id}>
+                  <TableCell className="text-xs font-medium">
                     {new Date(t.date).toLocaleString("en-US", {
                       year: "numeric",
                       month: "short",
@@ -215,59 +291,26 @@ export default function SalesDashboard() {
                       hour: "2-digit",
                       minute: "2-digit",
                     })}
-                  </td>
-                  <td>{t.patientName}</td>
-                  <td>{t.serviceName}</td>
-                  <td>{t.paymentType}</td>
-                  <td>₱{t.amount.toLocaleString()}</td>
-                </tr>
-              ))}
-              {transactions.length === 0 && (
-                <tr>
-                  <td colSpan={5} className="text-center py-4 text-gray-500">
-                    No transactions found for this range.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Mobile Cards */}
-        <div className="grid gap-4 md:hidden p-2">
-          {transactions.map((t) => (
-            <div
-              key={t.$id}
-              className="card bg-[var(--theme-bg)] border border-yellow-500/40 shadow-lg rounded-2xl p-4 hover:shadow-yellow-500/20 transition-all duration-300"
-            >
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-sm font-medium text-gray-400">
-                  {new Date(t.date).toLocaleString("en-US", {
-                    year: "numeric",
-                    month: "short",
-                    day: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </span>
-                <span className="badge badge-warning text-black font-bold px-3 py-1 rounded-full">
-                  {t.paymentType}
-                </span>
-              </div>
-
-              <h2 className="text-lg font-semibold text-yellow-400">
-                {t.patientName} – {t.serviceName}
-              </h2>
-
-              <div className="flex justify-between items-center mt-3">
-                <span className="text-sm text-gray-400">Amount</span>
-                <span className="text-xl font-bold text-yellow-400">
-                  ₱{t.amount.toLocaleString()}
-                </span>
-              </div>
-            </div>
-          ))}
-        </div>
+                  </TableCell>
+                  <TableCell className="text-xs font-semibold text-[hsl(var(--foreground))]">
+                    {t.patientName || "-"}
+                  </TableCell>
+                  <TableCell className="text-xs text-[hsl(var(--muted-foreground))]">
+                    {t.serviceName || "Treatment"}
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={t.paymentType === "Installment" ? "warning" : "secondary"} className="text-[10px]">
+                      {t.paymentType || "Cash"}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-right text-xs font-bold text-emerald-500">
+                    ₱{Number(t.amount || 0).toLocaleString()}
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
       </div>
     </div>
   );

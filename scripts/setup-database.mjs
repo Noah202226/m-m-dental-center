@@ -47,6 +47,7 @@ const collectionsSchema = [
       { type: "string", key: "serviceType", size: 50, required: true },
       { type: "float", key: "servicePrice", required: true },
       { type: "float", key: "balance", required: false, default: 0 },
+      { type: "string", key: "medicalHistory", size: 1000, required: false },
     ],
     indexes: [],
   },
@@ -62,6 +63,7 @@ const collectionsSchema = [
       { type: "string", key: "paymentType", size: 50, required: false },
       { type: "string", key: "date", size: 100, required: true },
       { type: "string", key: "remarks", size: 255, required: false },
+      { type: "float", key: "totalFee", required: false },
     ],
     indexes: [
       { key: "patientId_idx", type: "key", attributes: ["patientId"] },

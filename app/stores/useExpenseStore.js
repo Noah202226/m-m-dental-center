@@ -3,7 +3,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { databases, DATABASE_ID } from "../lib/appwrite"; // adjust your import path
 import { ID, Query } from "appwrite";
-import toast from "react-hot-toast";
+import { toast } from "sonner";
 
 const COLLECTION_ID = "expenses";
 
@@ -79,7 +79,9 @@ export const useExpensesStore = create(
           });
         } catch (error) {
           console.error("Fetch expenses failed:", error);
-          toast.error("Failed to fetch expenses ❌");
+          toast.error("Failed to fetch expenses", {
+            description: error?.message || "Could not retrieve expense logs.",
+          });
           set({ loading: false });
         }
       },
@@ -125,11 +127,16 @@ export const useExpensesStore = create(
             return { expenses, filteredExpenses };
           });
 
-          toast.success("Expense added 💸");
+          toast.success(`Expense "${newExpense.title}" recorded 💸`, {
+            description: `₱${newExpense.amount.toLocaleString()} logged under ${newExpense.category}.`,
+          });
           return newExpense;
         } catch (error) {
           console.error("Add expense failed:", error);
-          toast.error("Failed to add expense ❌");
+          toast.error("Failed to add expense", {
+            description: error?.message || "Error saving expense record.",
+          });
+          throw error;
         }
       },
 
@@ -147,10 +154,14 @@ export const useExpensesStore = create(
             return { expenses, filteredExpenses };
           });
 
-          toast("Expense deleted 🗑️");
+          toast.success("Expense deleted 🗑️", {
+            description: "The expense entry has been permanently deleted.",
+          });
         } catch (error) {
           console.error("Delete expense failed:", error);
-          toast.error("Failed to delete expense ❌");
+          toast.error("Failed to delete expense", {
+            description: error?.message || "Could not delete expense.",
+          });
         }
       },
 
@@ -191,11 +202,16 @@ export const useExpensesStore = create(
             return { expenses, filteredExpenses };
           });
 
-          toast.success("Expense updated ✏️");
+          toast.success(`Expense "${updatedExpense.title}" updated ✏️`, {
+            description: "Modifications have been saved.",
+          });
           return updatedExpense;
         } catch (error) {
           console.error("Update expense failed:", error);
-          toast.error("Failed to update expense ❌");
+          toast.error("Failed to update expense", {
+            description: error?.message || "Could not update expense entry.",
+          });
+          throw error;
         }
       },
     }),

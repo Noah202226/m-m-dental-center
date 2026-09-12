@@ -1,64 +1,41 @@
 "use client";
+
 import { useExpensesStore } from "../../stores/useExpenseStore";
-import { FiFilter } from "react-icons/fi";
 import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+} from "../ui/Card";
+import { Button } from "../ui/Button";
+import { Input } from "../ui/Input";
+import { Badge } from "../ui/Badge";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableHead,
+  TableRow,
+  TableCell,
+} from "../ui/Table";
+import {
+  Receipt,
+  Filter,
+  FileDown,
+  Calendar,
+  XCircle,
+} from "lucide-react";
 
 // PDF
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
+import "../../Roboto-font";
 
 export default function ExpensesTab() {
   const { filteredExpenses, filterByDate, clearFilter, fetchExpenses } =
     useExpensesStore();
-
-  // PDF Report
-  const generateReport = () => {
-    const doc = new jsPDF();
-
-    // Title
-    doc.setFontSize(16);
-    doc.setFont("Roboto-font");
-    doc.text("Expenses Report", 14, 20);
-
-    // Date range
-    if (startDate && endDate) {
-      doc.setFontSize(11);
-      doc.text(`From: ${startDate} To: ${endDate}`, 14, 28);
-    }
-
-    // Build table rows
-    const rows = filteredExpenses.map((t) => [
-      new Date(t.date).toLocaleString("en-US", {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-      t.title,
-      t.category,
-      `PHP ${t.amount.toLocaleString()}`,
-    ]);
-
-    autoTable(doc, {
-      startY: 35,
-      head: [["Date", "Patient", "Service", "Amount"]],
-      body: rows,
-      styles: { font: "helvetica" },
-    });
-
-    // Totals
-    const totalAmount = filteredExpenses.reduce((sum, t) => sum + t.amount, 0);
-    doc.setFontSize(12);
-    doc.text(
-      `Total: PHP ${totalAmount.toLocaleString()}`,
-      14,
-      doc.lastAutoTable.finalY + 10
-    );
-
-    // Save PDF
-    doc.save("expenses_report.pdf");
-  };
 
   // 📅 Calculate first & last day of month
   const today = new Date();
@@ -67,9 +44,87 @@ export default function ExpensesTab() {
 
   const formatDate = (d) => d.toISOString().split("T")[0];
 
-  // 🔹 Keep inputs in state (but don’t filter until clicked)
   const [startDate, setStartDate] = useState(formatDate(firstDay));
   const [endDate, setEndDate] = useState(formatDate(lastDay));
+
+  useEffect(() => {
+    fetchExpenses();
+  }, [fetchExpenses]);
+
+  // PDF Report
+  const generateReport = () => {
+    try {
+      const doc = new jsPDF();
+
+      // Title
+      doc.setFontSize(16);
+      doc.setFont("Roboto-font");
+      doc.text("Clinic Expenses Report", 14, 20);
+
+      // Date range
+      if (startDate && endDate) {
+        doc.setFontSize(11);
+        doc.text(`Period: ${startDate} to ${endDate}`, 14, 28);
+      }
+
+      // Build table rows
+      const rows = filteredExpenses.map((t) => [
+        new Date(t.date).toLocaleString("en-US", {
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+        t.title || "Expense",
+        t.category || "General",
+        `PHP ${Number(t.amount || 0).toLocaleString()}`,
+      ]);
+
+      autoTable(doc, {
+        startY: 35,
+        head: [["Date", "Expense Description", "Category", "Amount"]],
+        body: rows,
+        styles: { font: "helvetica" },
+      });
+
+      // Totals
+      const totalAmount = filteredExpenses.reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
+      doc.setFontSize(12);
+      doc.text(
+        `Total Expenses: PHP ${totalAmount.toLocaleString()}`,
+        14,
+        doc.lastAutoTable.finalY + 10
+      );
+
+      // Save PDF
+      doc.save(`expenses_report_${startDate}_to_${endDate}.pdf`);
+      toast.success("Expense report PDF exported! 📄", {
+        description: `Exported ${filteredExpenses.length} expense logs.`,
+      });
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to generate expenses PDF report");
+    }
+  };
+
+  const handleApplyFilter = () => {
+    if (!startDate || !endDate) {
+      toast.error("Please select both start and end dates");
+      return;
+    }
+    filterByDate({ start: startDate, end: endDate });
+    toast.info("Expenses filtered by date range 📅", {
+      description: `${startDate} to ${endDate}`,
+    });
+  };
+
+  const handleClearFilter = () => {
+    clearFilter();
+    setStartDate(formatDate(firstDay));
+    setEndDate(formatDate(lastDay));
+    toast.info("Cleared expense date filters");
+  };
 
   // 🔹 Totals
   const { todayTotal, monthTotal, yearTotal } = useMemo(() => {
@@ -83,14 +138,15 @@ export default function ExpensesTab() {
 
     filteredExpenses.forEach((e) => {
       const d = new Date(e.date);
+      const amt = Number(e.amount) || 0;
       if (d.toISOString().split("T")[0] === todayStr) {
-        tTotal += e.amount;
+        tTotal += amt;
       }
       if (d.getMonth() === month && d.getFullYear() === year) {
-        mTotal += e.amount;
+        mTotal += amt;
       }
       if (d.getFullYear() === year) {
-        yTotal += e.amount;
+        yTotal += amt;
       }
     });
 
@@ -101,146 +157,148 @@ export default function ExpensesTab() {
     };
   }, [filteredExpenses]);
 
-  useEffect(() => {
-    fetchExpenses();
-  }, []);
-
   return (
-    <div className="flex flex-col h-full overflow-hidden text-yellow-400">
-      {/* 🔹 Fixed Header (summary + filter) */}
-      <div className="shrink-0 bg-black pb-2 z-5">
-        <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-          💰 Expenses Report
-        </h2>
+    <div className="flex flex-1 flex-col h-full space-y-4">
+      {/* Header & Controls */}
+      <div className="space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-bold text-[hsl(var(--foreground))] flex items-center gap-2">
+              <Receipt className="h-5 w-5 text-amber-500" />
+              Practice Operating Expenses
+            </h2>
+            <p className="text-xs text-[hsl(var(--muted-foreground))]">
+              Audit operational expenditures, inventory orders, and clinic overhead
+            </p>
+          </div>
 
-        {/* Totals */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-          <div className="card bg-black border border-yellow-500/40 shadow-lg rounded-2xl p-4">
-            <h3 className="text-sm font-medium text-gray-400">Today</h3>
-            <p className="text-2xl md:text-3xl font-extrabold text-yellow-400">
-              ₱{todayTotal.toLocaleString()}
-            </p>
-          </div>
-          <div className="card bg-black border border-yellow-500/40 shadow-lg rounded-2xl p-4">
-            <h3 className="text-sm font-medium text-gray-400">This Month</h3>
-            <p className="text-2xl md:text-3xl font-extrabold text-yellow-400">
-              ₱{monthTotal.toLocaleString()}
-            </p>
-          </div>
-          <div className="card bg-black border border-yellow-500/40 shadow-lg rounded-2xl p-4">
-            <h3 className="text-sm font-medium text-gray-400">This Year</h3>
-            <p className="text-2xl md:text-3xl font-extrabold text-yellow-400">
-              ₱{yearTotal.toLocaleString()}
-            </p>
-          </div>
+          <Button
+            onClick={generateReport}
+            className="gap-2 shrink-0 self-start sm:self-auto shadow-sm"
+          >
+            <FileDown size={15} />
+            <span>Export Expenses PDF</span>
+          </Button>
         </div>
 
-        {/* Date Filter */}
-        <div className="flex flex-col md:flex-row gap-3 items-center mb-3">
-          <input
+        {/* Expense Totals Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <Card className="p-4 border-[hsl(var(--border))] bg-[hsl(var(--card))]">
+            <span className="text-[11px] font-medium text-[hsl(var(--muted-foreground))] block">
+              Today's Expenses
+            </span>
+            <p className="text-2xl font-bold text-amber-500 mt-1">
+              ₱{todayTotal.toLocaleString()}
+            </p>
+          </Card>
+
+          <Card className="p-4 border-[hsl(var(--border))] bg-[hsl(var(--card))]">
+            <span className="text-[11px] font-medium text-[hsl(var(--muted-foreground))] block">
+              This Month's Overhead
+            </span>
+            <p className="text-2xl font-bold text-red-500 mt-1">
+              ₱{monthTotal.toLocaleString()}
+            </p>
+          </Card>
+
+          <Card className="p-4 border-[hsl(var(--border))] bg-[hsl(var(--card))]">
+            <span className="text-[11px] font-medium text-[hsl(var(--muted-foreground))] block">
+              Year to Date Total
+            </span>
+            <p className="text-2xl font-bold text-[hsl(var(--foreground))] mt-1">
+              ₱{yearTotal.toLocaleString()}
+            </p>
+          </Card>
+        </div>
+
+        {/* Filter Controls */}
+        <div className="flex flex-wrap items-center gap-2 p-3 rounded-xl bg-[hsl(var(--muted))]/40 border border-[hsl(var(--border))]">
+          <span className="text-xs font-semibold text-[hsl(var(--foreground))] flex items-center gap-1.5 mr-1">
+            <Calendar size={14} className="text-amber-500" />
+            <span>Range:</span>
+          </span>
+
+          <Input
             type="date"
             value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
-            className="input input-sm bg-black border border-yellow-400 text-yellow-400 rounded-lg"
+            className="w-36 h-8 text-xs"
           />
-          <span className="text-gray-400">to</span>
-          <input
+          <span className="text-xs text-[hsl(var(--muted-foreground))]">to</span>
+          <Input
             type="date"
             value={endDate}
             onChange={(e) => setEndDate(e.target.value)}
-            className="input input-sm bg-black border border-yellow-400 text-yellow-400 rounded-lg"
+            className="w-36 h-8 text-xs"
           />
-          <button
-            onClick={() => filterByDate(startDate, endDate)}
-            className="btn btn-sm bg-yellow-400 text-black hover:bg-yellow-500 flex items-center gap-2"
-          >
-            <FiFilter /> Filter
-          </button>
-          <button
-            onClick={generateReport}
-            className="btn btn-sm bg-yellow-400 text-black"
-          >
-            Generate Expense Report
-          </button>
+
+          <div className="flex items-center gap-2 ml-auto">
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={handleApplyFilter}
+              className="h-8 gap-1.5 text-xs"
+            >
+              <Filter size={13} />
+              <span>Apply Filter</span>
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={handleClearFilter}
+              className="h-8 gap-1.5 text-xs text-[hsl(var(--muted-foreground))]"
+            >
+              <XCircle size={13} />
+              <span>Reset</span>
+            </Button>
+          </div>
         </div>
       </div>
 
-      {/* 🔹 Scrollable Content */}
-      <div className="flex-1 min-h-0 overflow-y-auto">
-        {/* Desktop Table */}
-        <div className="hidden md:block">
-          <table className="table  w-full text-yellow-400">
-            <thead>
-              <tr className="bg-yellow-500 text-black sticky top-0">
-                <th>Date</th>
-                <th>Expense</th>
-                <th>Category</th>
-                <th>Amount</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredExpenses.map((e) => (
-                <tr key={e.$id}>
-                  <td>
-                    {new Date(e.date).toLocaleString("en-US", {
+      {/* 🔹 Scrollable Table */}
+      <div className="flex-1 overflow-x-auto border border-[hsl(var(--border))] rounded-xl bg-[hsl(var(--card))]">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Date</TableHead>
+              <TableHead>Expense Description</TableHead>
+              <TableHead>Category</TableHead>
+              <TableHead className="text-right">Amount</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredExpenses.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={4} className="text-center py-10 text-xs text-[hsl(var(--muted-foreground))]">
+                  No expenses found for this date range.
+                </TableCell>
+              </TableRow>
+            ) : (
+              filteredExpenses.map((e) => (
+                <TableRow key={e.$id}>
+                  <TableCell className="text-xs font-medium">
+                    {new Date(e.date).toLocaleDateString("en-US", {
                       year: "numeric",
                       month: "short",
                       day: "numeric",
-                      hour: "2-digit",
-                      minute: "2-digit",
                     })}
-                  </td>
-                  <td>{e.title}</td>
-                  <td>{e.category}</td>
-                  <td>₱{e.amount.toLocaleString()}</td>
-                </tr>
-              ))}
-              {filteredExpenses.length === 0 && (
-                <tr>
-                  <td colSpan={4} className="text-center py-4 text-gray-500">
-                    No expenses found for this range.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Mobile Cards */}
-        <div className="grid gap-4 md:hidden p-2">
-          {filteredExpenses.map((e) => (
-            <div
-              key={e.$id}
-              className="card bg-[var(--theme-bg)] border border-yellow-500/40 shadow-lg rounded-2xl p-4 hover:shadow-yellow-500/20 transition-all duration-300"
-            >
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-sm font-medium text-gray-400">
-                  {new Date(e.date).toLocaleString("en-US", {
-                    year: "numeric",
-                    month: "short",
-                    day: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </span>
-                <span className="badge badge-warning text-black font-bold px-3 py-1 rounded-full">
-                  {e.category}
-                </span>
-              </div>
-
-              <h2 className="text-lg font-semibold text-yellow-400">
-                {e.title}
-              </h2>
-
-              <div className="flex justify-between items-center mt-3">
-                <span className="text-sm text-gray-400">Amount</span>
-                <span className="text-xl font-bold text-yellow-400">
-                  ₱{e.amount.toLocaleString()}
-                </span>
-              </div>
-            </div>
-          ))}
-        </div>
+                  </TableCell>
+                  <TableCell className="text-xs font-semibold text-[hsl(var(--foreground))]">
+                    {e.title}
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className="text-[10px]">
+                      {e.category || "Supplies"}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-right text-xs font-bold text-red-500">
+                    -₱{Number(e.amount || 0).toLocaleString()}
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
       </div>
     </div>
   );

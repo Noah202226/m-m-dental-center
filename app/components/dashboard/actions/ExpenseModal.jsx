@@ -2,16 +2,33 @@
 
 import { useState, useEffect } from "react";
 import { useExpensesStore } from "../../../stores/useExpenseStore";
+import { useCategoryStore } from "../../../stores/useCategoryStore";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "../../ui/Dialog";
+import { Input } from "../../ui/Input";
+import { Button } from "../../ui/Button";
+import { Receipt } from "lucide-react";
+import { toast } from "sonner";
 
 export default function ExpenseModal({ isOpen, onClose, expense }) {
   const { addExpense, updateExpense } = useExpensesStore();
+  const { categories, fetchCategories } = useCategoryStore();
+  const [loading, setLoading] = useState(false);
 
   const [form, setForm] = useState({
     title: "",
     amount: "",
     category: "",
-    date: "",
+    date: new Date().toISOString().split("T")[0],
   });
+
+  useEffect(() => {
+    fetchCategories();
+  }, [fetchCategories]);
 
   useEffect(() => {
     if (expense) {
@@ -19,116 +36,167 @@ export default function ExpenseModal({ isOpen, onClose, expense }) {
         title: expense.title || "",
         amount: expense.amount || "",
         category: expense.category || "",
-        date: expense.date || "",
+        date: expense.date || new Date().toISOString().split("T")[0],
       });
     } else {
-      setForm({ title: "", amount: "", category: "", date: "" });
+      setForm({
+        title: "",
+        amount: "",
+        category: categories.length > 0 ? categories[0].name : "Supplies",
+        date: new Date().toISOString().split("T")[0],
+      });
     }
-  }, [expense, isOpen]);
+  }, [expense, isOpen, categories]);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if (expense) {
-      updateExpense(expense.$id, form);
-    } else {
-      addExpense(form);
+    const amountVal = parseFloat(form.amount);
+    if (!amountVal || isNaN(amountVal) || amountVal <= 0) {
+      toast.error("Please enter a valid expense amount");
+      return;
     }
 
-    onClose();
+    try {
+      setLoading(true);
+      if (expense) {
+        await updateExpense(expense.$id, form);
+        toast.success(`Expense "${form.title}" updated successfully!`);
+      } else {
+        await addExpense(form);
+        toast.success(`Expense "${form.title}" recorded! 💸`, {
+          description: `₱${amountVal.toLocaleString()} logged under ${form.category}`,
+        });
+      }
+      onClose();
+    } catch (err) {
+      console.error("Error saving expense:", err);
+      toast.error("Failed to save expense record");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <>
-      {isOpen && (
-        <div className="modal modal-open z-[9999]">
-          <div className="modal-box bg-black text-yellow-400 border-2 border-yellow-500">
-            <h3 className="font-bold text-lg mb-4 text-yellow-400">
-              {expense ? "Edit Expense" : "Add New Expense"}
-            </h3>
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Title */}
-              <div>
-                <label className="label text-yellow-400">Title</label>
-                <input
-                  type="text"
-                  name="title"
-                  value={form.title}
-                  onChange={handleChange}
-                  className="input input-bordered w-full bg-black border-yellow-500 text-yellow-400"
-                  required
-                />
-              </div>
-
-              {/* Amount */}
-              <div>
-                <label className="label text-yellow-400">Amount</label>
-                <input
-                  type="number"
-                  name="amount"
-                  value={form.amount}
-                  onChange={handleChange}
-                  className="input input-bordered w-full bg-black border-yellow-500 text-yellow-400"
-                  required
-                />
-              </div>
-
-              {/* Category */}
-              <div>
-                <label className="label text-yellow-400">Category</label>
-                <select
-                  name="category"
-                  value={form.category}
-                  onChange={handleChange}
-                  className="select select-bordered w-full bg-black border-yellow-500 text-yellow-400"
-                  required
-                >
-                  <option value="">-- Select Category --</option>
-                  <option value="Food">Food</option>
-                  <option value="Transport">Transport</option>
-                  <option value="Utilities">Utilities</option>
-                  <option value="Other">Other</option>
-                </select>
-              </div>
-
-              {/* Date */}
-              <div>
-                <label className="label text-yellow-400">Date</label>
-                <input
-                  type="date"
-                  name="date"
-                  value={form.date}
-                  onChange={handleChange}
-                  className="input input-bordered w-full bg-black border-yellow-500 text-yellow-400"
-                  required
-                />
-              </div>
-
-              {/* Actions */}
-              <div className="modal-action">
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="btn bg-gray-800 text-yellow-400 border-yellow-500 hover:bg-gray-900"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="btn bg-yellow-500 text-black hover:bg-yellow-400"
-                >
-                  {expense ? "Update" : "Save"}
-                </button>
-              </div>
-            </form>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <div className="flex items-center gap-2">
+            <div className="h-9 w-9 rounded-xl bg-amber-500/15 text-amber-500 flex items-center justify-center">
+              <Receipt className="h-5 w-5" />
+            </div>
+            <div>
+              <DialogTitle>
+                {expense ? "Edit Clinic Expense" : "Record Clinic Expense"}
+              </DialogTitle>
+            </div>
           </div>
-        </div>
-      )}
-    </>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit} className="space-y-4 pt-2">
+          {/* Title */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-[hsl(var(--muted-foreground))]">
+              Expense Description *
+            </label>
+            <Input
+              type="text"
+              name="title"
+              value={form.title}
+              onChange={handleChange}
+              placeholder="e.g. Composite syringe refill, Electricity bill"
+              required
+            />
+          </div>
+
+          {/* Amount */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-[hsl(var(--muted-foreground))]">
+              Amount (₱) *
+            </label>
+            <div className="relative">
+              <span className="absolute left-3 top-2 text-sm font-semibold text-[hsl(var(--muted-foreground))]">
+                ₱
+              </span>
+              <Input
+                type="number"
+                step="any"
+                name="amount"
+                value={form.amount}
+                onChange={handleChange}
+                placeholder="0.00"
+                className="pl-8 text-sm font-semibold"
+                required
+              />
+            </div>
+          </div>
+
+          {/* Category */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-[hsl(var(--muted-foreground))]">
+              Expense Category *
+            </label>
+            <select
+              name="category"
+              value={form.category}
+              onChange={handleChange}
+              className="flex h-9 w-full rounded-lg border border-[hsl(var(--input))] bg-[hsl(var(--background))] px-3 py-1 text-sm text-[hsl(var(--foreground))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(var(--ring))]"
+              required
+            >
+              <option value="" disabled>
+                -- Select Category --
+              </option>
+              {categories.map((c) => (
+                <option key={c.$id} value={c.name}>
+                  {c.name}
+                </option>
+              ))}
+              {categories.length === 0 && (
+                <>
+                  <option value="Supplies">Supplies</option>
+                  <option value="Utilities">Utilities</option>
+                  <option value="Rent">Rent</option>
+                  <option value="Salaries">Salaries</option>
+                  <option value="Maintenance">Maintenance</option>
+                  <option value="Other">Other</option>
+                </>
+              )}
+            </select>
+          </div>
+
+          {/* Date */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-medium text-[hsl(var(--muted-foreground))]">
+              Expenditure Date *
+            </label>
+            <Input
+              type="date"
+              name="date"
+              value={form.date}
+              onChange={handleChange}
+              required
+            />
+          </div>
+
+          {/* Actions */}
+          <div className="flex items-center justify-end gap-2 pt-3 border-t border-[hsl(var(--border))]">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              disabled={loading}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" loading={loading}>
+              {expense ? "Update Expense" : "Record Expense"}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }
