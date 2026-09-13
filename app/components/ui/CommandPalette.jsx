@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { Command as CommandPrimitive } from "cmdk";
-import { Search, Home, Users, Package, FileText, Settings, Plus, UserPlus } from "lucide-react";
+import { Search, Home, Users, Package, FileText, Settings, Plus, UserPlus, Calendar } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { Dialog, DialogContent } from "./Dialog";
 
@@ -55,6 +55,13 @@ export function CommandPalette({
               >
                 <Home className="h-4 w-4" />
                 <span>Dashboard Overview</span>
+              </CommandPrimitive.Item>
+              <CommandPrimitive.Item
+                onSelect={() => runCommand(() => onSelectAction("nav", "appointments"))}
+                className="flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-2 text-sm text-[hsl(var(--foreground))] hover:bg-amber-500/15 hover:text-amber-400 aria-selected:bg-amber-500/15 aria-selected:text-amber-400 transition-colors"
+              >
+                <Calendar className="h-4 w-4" />
+                <span>Appointments Calendar</span>
               </CommandPrimitive.Item>
               <CommandPrimitive.Item
                 onSelect={() => runCommand(() => onSelectAction("nav", "patients"))}

@@ -1,6 +1,4 @@
-// lib/appwrite.ts
-
-import { Client, Account, Databases } from "appwrite";
+import { Client, Account, Databases, Storage } from "appwrite";
 
 export const client = new Client();
 
@@ -10,6 +8,7 @@ client
 
 export const account = new Account(client);
 export const databases = new Databases(client);
+export const storage = new Storage(client);
 export const DATABASE_ID = process.env.NEXT_PUBLIC_DATABASE_ID;
 
 export { ID } from "appwrite";

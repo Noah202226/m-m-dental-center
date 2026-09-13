@@ -20,6 +20,15 @@ import {
 import SettingsData from "./dashboard/Settings";
 import Reports from "./dashboard/Reports";
 import Patients from "./dashboard/Patients";
+import dynamic from "next/dynamic";
+
+const Appointments = dynamic(() => import("./dashboard/Appointments"), {
+  loading: () => (
+    <div className="flex items-center justify-center min-h-[400px]">
+      <span className="loading loading-spinner text-amber-500"></span>
+    </div>
+  ),
+});
 import { useServices } from "./hooks/useServices";
 import { databases } from "../lib/appwrite";
 import { ID } from "appwrite";
@@ -48,6 +57,7 @@ const DATABASE_ID = process.env.NEXT_PUBLIC_DATABASE_ID;
 
 const menuItems = [
   { id: "dashboard", label: "Dashboard", icon: <Home size={19} /> },
+  { id: "appointments", label: "Appointments", icon: <Calendar size={19} /> },
   { id: "patients", label: "Patients", icon: <Users size={19} /> },
   { id: "products", label: "Products", icon: <Package size={19} /> },
   { id: "reports", label: "Reports", icon: <Stethoscope size={19} /> },
@@ -407,6 +417,7 @@ export default function DentalClinicLayout() {
         {/* Content Area */}
         <section className="flex-1 overflow-y-auto p-4 sm:p-6 min-h-0">
           {active === "dashboard" && <DashboardData />}
+          {active === "appointments" && <Appointments />}
           {active === "patients" && <Patients />}
           {active === "products" && <Products />}
           {active === "reports" && <Reports />}

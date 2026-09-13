@@ -5,6 +5,8 @@ import { useSettingsStore } from "../../stores/useSettingStore";
 import ServicesData from "../settings/services/Services";
 import CategoriesSettings from "../settings/CategoryTab";
 import PersonalizationTab from "../settings/PersonalizationTab";
+import ClinicSchedulesTab from "../settings/ClinicSchedulesTab";
+import DentistsTab from "../settings/DentistsTab";
 import {
   Card,
   CardHeader,
@@ -25,14 +27,19 @@ import {
   Trash2,
   Mail,
   User,
+  Calendar,
+  UserCheck,
 } from "lucide-react";
+import { toast } from "sonner";
 
 export default function SettingsTabs() {
   const [activeTab, setActiveTab] = useState("services");
 
   const tabs = [
     { key: "services", label: "Services & Procedures", icon: <Stethoscope size={16} /> },
-    { key: "personalization", label: "Branding & Title", icon: <Palette size={16} /> },
+    { key: "schedules", label: "Clinic Schedules", icon: <Calendar size={16} /> },
+    { key: "dentists", label: "Dentists & Doctors", icon: <UserCheck size={16} /> },
+    { key: "personalization", label: "Branding & Clinic Info", icon: <Palette size={16} /> },
     { key: "users", label: "Staff & Users", icon: <Users size={16} /> },
     { key: "inventory", label: "Expense & Product Categories", icon: <Tags size={16} /> },
   ];
@@ -69,7 +76,7 @@ export default function SettingsTabs() {
           Practice Configuration & Settings
         </h2>
         <p className="text-xs text-[hsl(var(--muted-foreground))]">
-          Configure clinical services, clinic identity, staff members, and category taxonomies
+          Configure clinical services, clinic schedules, dentists, clinic branding, staff accounts, and category taxonomies
         </p>
       </div>
 
@@ -96,10 +103,28 @@ export default function SettingsTabs() {
 
       {/* Tab Content Container */}
       <div>
-        {/* 🔹 Dental Services & Procedures */}
+        {/* 1. Dental Services & Procedures */}
         {activeTab === "services" && <ServicesData />}
 
-        {/* 🔹 Personalization */}
+        {/* 2. Clinic Schedules & Operating Hours */}
+        {activeTab === "schedules" && (
+          <Card className="border-[hsl(var(--border))]">
+            <CardContent className="p-6">
+              <ClinicSchedulesTab />
+            </CardContent>
+          </Card>
+        )}
+
+        {/* 3. Dentists & Doctors */}
+        {activeTab === "dentists" && (
+          <Card className="border-[hsl(var(--border))]">
+            <CardContent className="p-6">
+              <DentistsTab />
+            </CardContent>
+          </Card>
+        )}
+
+        {/* 4. Branding & Clinic Info (Personalization) */}
         {activeTab === "personalization" && (
           <Card className="border-[hsl(var(--border))]">
             <CardContent className="p-6">
@@ -108,7 +133,7 @@ export default function SettingsTabs() {
           </Card>
         )}
 
-        {/* 🔹 Staff / Users */}
+        {/* 5. Staff / Users */}
         {activeTab === "users" && (
           <Card className="border-[hsl(var(--border))]">
             <CardHeader>
@@ -117,7 +142,7 @@ export default function SettingsTabs() {
                 <span>Authorized Clinical Staff</span>
               </CardTitle>
               <CardDescription className="text-xs">
-                Manage dentist and staff profiles authorized to operate this clinic management workspace
+                Manage system users authorized to operate this clinic management workspace
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -131,7 +156,7 @@ export default function SettingsTabs() {
                     onChange={(e) =>
                       setNewUser((u) => ({ ...u, name: e.target.value }))
                     }
-                    placeholder="Staff Full Name (e.g. Dr. Jane Cruz)"
+                    placeholder="Staff Full Name (e.g. Jane Cruz)"
                     className="pl-9 h-10 text-sm"
                   />
                 </div>
@@ -198,7 +223,7 @@ export default function SettingsTabs() {
           </Card>
         )}
 
-        {/* 🔹 Inventory / Categories */}
+        {/* 6. Inventory / Categories */}
         {activeTab === "inventory" && (
           <Card className="border-[hsl(var(--border))]">
             <CardContent className="p-6">
