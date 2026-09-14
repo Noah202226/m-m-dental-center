@@ -490,6 +490,8 @@ export default function AppointmentManager() {
     notes,
     newAttendance,
     assignedDentist,
+    overrideDate = null,
+    overrideTime = null
   ) => {
     if (!event) return;
     setIsUpdating(event.$id);
@@ -505,8 +507,9 @@ export default function AppointmentManager() {
     try {
       // Construct the update object dynamically
       const updateData = {
-        dateKey: event.dateKey,
-        time: event.time,
+        dateKey: overrideDate ? new Date(overrideDate).toISOString().split("T")[0] : event.dateKey,
+        date: overrideDate ? new Date(overrideDate).toISOString() : event.date,
+        time: overrideTime || event.time,
         adminNote: notes,
       };
 
@@ -579,8 +582,8 @@ export default function AppointmentManager() {
               email: event.email,
               status: newStatus,
               patientName: event.name || event.title,
-              date: event.date,
-              time: event.time,
+              date: overrideDate ? new Date(overrideDate).toISOString() : event.date,
+              time: overrideTime || event.time,
               notes: notes || "No additional notes.",
             }),
           });
@@ -607,6 +610,7 @@ export default function AppointmentManager() {
             return {
               ...item,
               ...updateData,
+              date: updateData.date ? new Date(updateData.date) : item.date,
               status: isStatusAction ? newStatus : item.status,
               attendanceStatus: isAttendanceAction
                 ? newAttendance
@@ -777,11 +781,17 @@ export default function AppointmentManager() {
   };
 
   const [adminNote, setAdminNote] = useState(selectedEvent?.adminNote || "");
+  const [approvedDateStr, setApprovedDateStr] = useState("");
+  const [approvedTimeStr, setApprovedTimeStr] = useState("");
 
-  // Update adminNote whenever the selectedEvent changes
+  // Update adminNote whenever the selectedAppointment changes
   useEffect(() => {
-    setAdminNote(selectedEvent?.adminNote || "");
-  }, [selectedEvent]);
+    setAdminNote(selectedAppointment?.adminNote || "");
+    if (selectedAppointment) {
+      setApprovedDateStr(selectedAppointment.dateKey || "");
+      setApprovedTimeStr(selectedAppointment.time || "");
+    }
+  }, [selectedAppointment]);
 
   if (isLoading)
     return (
@@ -1841,17 +1851,56 @@ export default function AppointmentManager() {
                           {console.log(selectedAppointment)}
                           {selectedAppointment.status === "pending" ? (
                             /* CASE 1: PENDING - Show Approve and Cancel */
-                            <div className="grid grid-cols-2 gap-3">
-                              <button
-                                disabled={isUpdating}
-                                onClick={async () => {
-                                  setIsUpdating(true);
-                                  try {
-                                    await handleUpdateStatus(
-                                      selectedAppointment,
-                                      "confirmed",
-                                      adminNote,
-                                    );
+                            <div className="flex flex-col gap-4">
+                              {/* Date & Time override for Approval */}
+                              <div className="p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl border border-zinc-100 dark:border-zinc-800 space-y-3">
+                                <h4 className="text-[10px] font-black uppercase text-zinc-400 tracking-[0.2em] mb-2">Approved Schedule</h4>
+                                <div className="grid grid-cols-2 gap-3">
+                                  <div>
+                                    <label className="text-[9px] font-bold text-zinc-500 uppercase">Date</label>
+                                    <input
+                                      type="date"
+                                      value={approvedDateStr}
+                                      onChange={(e) => setApprovedDateStr(e.target.value)}
+                                      className="w-full p-2 mt-1 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg text-xs outline-none focus:border-primary-500"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="text-[9px] font-bold text-zinc-500 uppercase">Time</label>
+                                    <input
+                                      type="time"
+                                      value={approvedTimeStr ? (approvedTimeStr.includes("AM") || approvedTimeStr.includes("PM") ? new Date(`1970/01/01 ${approvedTimeStr}`).toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' }) : approvedTimeStr) : ""}
+                                      onChange={(e) => {
+                                        const timeValue = e.target.value;
+                                        if(timeValue){
+                                            const [hours, minutes] = timeValue.split(":");
+                                            const ampm = hours >= 12 ? 'PM' : 'AM';
+                                            const hour12 = hours % 12 || 12;
+                                            setApprovedTimeStr(`${hour12.toString().padStart(2, '0')}:${minutes} ${ampm}`);
+                                        } else {
+                                            setApprovedTimeStr("");
+                                        }
+                                      }}
+                                      className="w-full p-2 mt-1 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg text-xs outline-none focus:border-primary-500"
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="grid grid-cols-2 gap-3">
+                                <button
+                                  disabled={isUpdating}
+                                  onClick={async () => {
+                                    setIsUpdating(true);
+                                    try {
+                                      await handleUpdateStatus(
+                                        selectedAppointment,
+                                        "confirmed",
+                                        adminNote,
+                                        null,
+                                        null,
+                                        approvedDateStr,
+                                        approvedTimeStr
+                                      );
                                     setSelectedAppointment(null);
                                   } catch (error) {
                                     console.error("Failed to approve:", error);
@@ -1893,7 +1942,8 @@ export default function AppointmentManager() {
                                 Cancel
                               </button>
                             </div>
-                          ) : (
+                          </div>
+                        ) : (
                             /* CASE 2: CONFIRMED/COMPLETED - Show Close Preview */
                             <button
                               disabled={isUpdating}
